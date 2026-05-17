@@ -1,0 +1,1016 @@
+--[[
+    AmazonUI Library - A Premium Roblox UI Framework
+    Features: Draggable Window, Sidebar Tabs, Animations, Mobile Support, Settings Saving
+    Author: Custom Built for Roblox
+--]]
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- Utility Functions
+local Utility = {}
+function Utility:Create(className, properties, parent)
+    local obj = Instance.new(className)
+    for prop, value in pairs(properties) do
+        obj[prop] = value
+    end
+    obj.Parent = parent or nil
+    return obj
+end
+
+function Utility:Tween(obj, properties, duration, style, direction)
+    local tweenInfo = TweenInfo.new(duration or 0.2, (style or Enum.EasingStyle.Quad), (direction or Enum.EasingDirection.Out))
+    local tween = TweenService:Create(obj, tweenInfo, properties)
+    tween:Play()
+    return tween
+end
+
+function Utility:Clamp(value, min, max)
+    return math.max(min, math.min(max, value))
+end
+
+-- Notification System
+local NotificationSystem = {}
+local notificationQueue = {}
+local activeNotifications = {}
+
+function NotificationSystem:Show(title, message, duration, type)
+    type = type or "info"
+    local container = self.container
+    if not container then return end
+    
+    local colors = {
+        info = Color3.fromRGB(52, 152, 219),
+        success = Color3.fromRGB(46, 204, 113),
+        warning = Color3.fromRGB(241, 196, 15),
+        error = Color3.fromRGB(231, 76, 60)
+    }
+    
+    local notification = Utility:Create("Frame", {
+        Size = UDim2.new(0, 320, 0, 70),
+        Position = UDim2.new(1, -340, 1, -100),
+        BackgroundColor3 = Color3.fromRGB(30, 35, 40),
+        BorderSizePixel = 0,
+        BackgroundTransparency = 1,
+        ClipsDescendants = true
+    }, container)
+    
+    local accentBar = Utility:Create("Frame", {
+        Size = UDim2.new(0, 4, 1, 0),
+        BackgroundColor3 = colors[type],
+        BorderSizePixel = 0
+    }, notification)
+    
+    local titleLabel = Utility:Create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 20),
+        Position = UDim2.new(0, 12, 0, 8),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 14,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, notification)
+    
+    local msgLabel = Utility:Create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 30),
+        Position = UDim2.new(0, 12, 0, 28),
+        BackgroundTransparency = 1,
+        Text = message,
+        TextColor3 = Color3.fromRGB(180, 180, 180),
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true
+    }, notification)
+    
+    Utility:Tween(notification, {BackgroundTransparency = 0}, 0.3)
+    
+    table.insert(activeNotifications, notification)
+    local notifId = #activeNotifications
+    
+    task.wait(duration or 3)
+    
+    if notification and notification.Parent then
+        Utility:Tween(notification, {BackgroundTransparency = 1}, 0.3)
+        task.wait(0.3)
+        notification:Destroy()
+        table.remove(activeNotifications, notifId)
+    end
+end
+
+-- Config System
+local ConfigSystem = {}
+local configData = {}
+local configFile = "AmazonUI_Settings"
+
+function ConfigSystem:Load()
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(readfile(configFile))
+    end)
+    if success and type(data) == "table" then
+        configData = data
+    else
+        configData = {
+            theme = "dark",
+            notificationsEnabled = true,
+            autoSave = true,
+            watermarkEnabled = true,
+            sidebarCollapsed = false
+        }
+    end
+    return configData
+end
+
+function ConfigSystem:Save()
+    local success, err = pcall(function()
+        writefile(configFile, HttpService:JSONEncode(configData))
+    end)
+    if not success then
+        warn("Failed to save config:", err)
+    end
+end
+
+function ConfigSystem:Get(key)
+    return configData[key]
+end
+
+function ConfigSystem:Set(key, value)
+    configData[key] = value
+    if configData.autoSave then
+        self:Save()
+    end
+    if self.onChange then
+        self.onChange(key, value)
+    end
+end
+
+-- Draggable Window Manager
+local DraggableManager = {}
+function DraggableManager:MakeDraggable(frame, dragHandle, onDragStart, onDragEnd)
+    local dragging = false
+    local dragStartPos = Vector2.new()
+    local frameStartPos = frame.Position
+    
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStartPos = input.Position
+            frameStartPos = frame.Position
+            if onDragStart then onDragStart() end
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    if onDragEnd then onDragEnd() end
+                end
+            end)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStartPos
+            local newX = frameStartPos.X.Scale + (delta.X / frame.AbsoluteSize.X)
+            local newY = frameStartPos.Y.Scale + (delta.Y / frame.AbsoluteSize.Y)
+            frame.Position = UDim2.new(newX, 0, newY, 0)
+        end
+    end)
+end
+
+-- Component Classes
+local Components = {}
+
+function Components:Button(parent, text, callback, width, height)
+    local button = Utility:Create("TextButton", {
+        Size = UDim2.new(0, width or 120, 0, height or 36),
+        BackgroundColor3 = Color3.fromRGB(45, 50, 55),
+        Text = text,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 14,
+        Font = Enum.Font.GothamMedium,
+        BorderSizePixel = 0,
+        AutoButtonColor = false
+    }, parent)
+    
+    local hoverTween = TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 65, 70)})
+    local leaveTween = TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(45, 50, 55)})
+    local clickTween = TweenService:Create(button, TweenInfo.new(0.05), {BackgroundColor3 = Color3.fromRGB(35, 40, 45)})
+    
+    button.MouseEnter:Connect(function() hoverTween:Play() end)
+    button.MouseLeave:Connect(function() leaveTween:Play() end)
+    button.MouseButton1Click:Connect(function()
+        clickTween:Play()
+        clickTween.Completed:Wait()
+        leaveTween:Play()
+        if callback then callback() end
+    end)
+    
+    return button
+end
+
+function Components:Toggle(parent, labelText, defaultState, callback)
+    local frame = Utility:Create("Frame", {
+        Size = UDim2.new(0, 200, 0, 30),
+        BackgroundTransparency = 1
+    }, parent)
+    
+    local label = Utility:Create("TextLabel", {
+        Size = UDim2.new(0, 140, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1,
+        Text = labelText,
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 13,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, frame)
+    
+    local toggleBg = Utility:Create("Frame", {
+        Size = UDim2.new(0, 40, 0, 20),
+        Position = UDim2.new(1, -44, 0, 5),
+        BackgroundColor3 = defaultState and Color3.fromRGB(230, 126, 34) or Color3.fromRGB(70, 75, 80),
+        BorderSizePixel = 0
+    }, frame)
+    
+    local toggleKnob = Utility:Create("Frame", {
+        Size = UDim2.new(0, 16, 0, 16),
+        Position = defaultState and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0
+    }, toggleBg)
+    
+    local state = defaultState
+    
+    local function updateToggle(newState)
+        state = newState
+        local targetColor = state and Color3.fromRGB(230, 126, 34) or Color3.fromRGB(70, 75, 80)
+        local targetPos = state and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2)
+        Utility:Tween(toggleBg, {BackgroundColor3 = targetColor}, 0.2)
+        Utility:Tween(toggleKnob, {Position = targetPos}, 0.2)
+        if callback then callback(state) end
+    end
+    
+    toggleBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            updateToggle(not state)
+        end
+    end)
+    
+    updateToggle(defaultState)
+    return {setValue = updateToggle, getValue = function() return state end}
+end
+
+function Components:Slider(parent, labelText, min, max, defaultVal, callback)
+    local frame = Utility:Create("Frame", {
+        Size = UDim2.new(0, 250, 0, 50),
+        BackgroundTransparency = 1
+    }, parent)
+    
+    local label = Utility:Create("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Text = labelText .. ": " .. tostring(defaultVal),
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 13,
+        Font = Enum.Font.Gotham
+    }, frame)
+    
+    local sliderBg = Utility:Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 4),
+        Position = UDim2.new(0, 0, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(70, 75, 80),
+        BorderSizePixel = 0
+    }, frame)
+    
+    local sliderFill = Utility:Create("Frame", {
+        Size = UDim2.new(0, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(230, 126, 34),
+        BorderSizePixel = 0
+    }, sliderBg)
+    
+    local knob = Utility:Create("TextButton", {
+        Size = UDim2.new(0, 12, 0, 12),
+        Position = UDim2.new(0, 0, 0, -4),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Text = ""
+    }, sliderBg)
+    
+    local value = defaultVal
+    local dragging = false
+    
+    local function updateFromPosition(inputPos)
+        local relX = math.clamp((inputPos.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+        value = min + (max - min) * relX
+        value = math.floor(value * 100) / 100
+        local percent = (value - min) / (max - min)
+        sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        knob.Position = UDim2.new(percent, -6, 0, -4)
+        label.Text = labelText .. ": " .. tostring(value)
+        if callback then callback(value) end
+    end
+    
+    knob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            updateFromPosition(input)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateFromPosition(input)
+        end
+        if input.UserInputState == Enum.UserInputState.End then
+            dragging = false
+        end
+    end)
+    
+    updateFromPosition({X = sliderBg.AbsolutePosition.X + (defaultVal - min)/(max - min) * sliderBg.AbsoluteSize.X})
+    
+    return {setValue = function(v) updateFromPosition({X = sliderBg.AbsolutePosition.X + (v - min)/(max - min) * sliderBg.AbsoluteSize.X}) end}
+end
+
+function Components:Dropdown(parent, labelText, options, multiSelect, defaultValues, callback)
+    local frame = Utility:Create("Frame", {
+        Size = UDim2.new(0, 200, 0, 36),
+        BackgroundTransparency = 1
+    }, parent)
+    
+    local label = Utility:Create("TextLabel", {
+        Size = UDim2.new(0, 80, 1, 0),
+        BackgroundTransparency = 1,
+        Text = labelText,
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 13,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, frame)
+    
+    local dropdownBtn = Utility:Create("TextButton", {
+        Size = UDim2.new(0, 110, 1, 0),
+        Position = UDim2.new(0, 80, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(45, 50, 55),
+        Text = defaultValues and (multiSelect and #defaultValues .. " selected" or defaultValues[1]) or "Select",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        BorderSizePixel = 0
+    }, frame)
+    
+    local dropdownList = Utility:Create("Frame", {
+        Size = UDim2.new(0, 110, 0, 0),
+        Position = UDim2.new(0, 80, 0, 36),
+        BackgroundColor3 = Color3.fromRGB(40, 45, 50),
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Visible = false
+    }, frame)
+    
+    local listLayout = Utility:Create("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 2)
+    }, dropdownList)
+    
+    local selected = defaultValues or {}
+    local buttons = {}
+    
+    local function updateDisplay()
+        if multiSelect then
+            dropdownBtn.Text = #selected == 0 and "Select" or (#selected .. " selected")
+        else
+            dropdownBtn.Text = selected[1] or "Select"
+        end
+        if callback then callback(multiSelect and selected or selected[1]) end
+    end
+    
+    local function createOption(opt)
+        local btn = Utility:Create("TextButton", {
+            Size = UDim2.new(1, 0, 0, 28),
+            BackgroundColor3 = Color3.fromRGB(45, 50, 55),
+            Text = opt,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextSize = 12,
+            Font = Enum.Font.Gotham,
+            BorderSizePixel = 0
+        }, dropdownList)
+        
+        local function toggleSelect()
+            if multiSelect then
+                local idx = table.find(selected, opt)
+                if idx then
+                    table.remove(selected, idx)
+                    btn.BackgroundColor3 = Color3.fromRGB(45, 50, 55)
+                else
+                    table.insert(selected, opt)
+                    btn.BackgroundColor3 = Color3.fromRGB(230, 126, 34)
+                end
+            else
+                selected = {opt}
+                updateDisplay()
+                dropdownList.Visible = false
+                for _, b in pairs(buttons) do
+                    b.BackgroundColor3 = Color3.fromRGB(45, 50, 55)
+                end
+            end
+            updateDisplay()
+        end
+        
+        if multiSelect and table.find(selected, opt) then
+            btn.BackgroundColor3 = Color3.fromRGB(230, 126, 34)
+        end
+        
+        btn.MouseButton1Click:Connect(toggleSelect)
+        return btn
+    end
+    
+    for _, opt in pairs(options) do
+        table.insert(buttons, createOption(opt))
+    end
+    
+    local expanded = false
+    dropdownBtn.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        dropdownList.Visible = true
+        local targetHeight = #options * 30
+        Utility:Tween(dropdownList, {Size = UDim2.new(0, 110, 0, expanded and targetHeight or 0)}, 0.25)
+        if not expanded then
+            task.wait(0.25)
+            dropdownList.Visible = false
+        end
+    end)
+    
+    updateDisplay()
+    return {setSelected = function(vals) selected = vals; updateDisplay() end}
+end
+
+function Components:Textbox(parent, placeholder, callback, width)
+    local textbox = Utility:Create("TextBox", {
+        Size = UDim2.new(0, width or 200, 0, 36),
+        BackgroundColor3 = Color3.fromRGB(45, 50, 55),
+        Text = "",
+        PlaceholderText = placeholder,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        PlaceholderColor3 = Color3.fromRGB(150, 155, 160),
+        TextSize = 13,
+        Font = Enum.Font.Gotham,
+        BorderSizePixel = 0
+    }, parent)
+    
+    textbox:GetPropertyChangedSignal("Text"):Connect(function()
+        if callback then callback(textbox.Text) end
+    end)
+    
+    return textbox
+end
+
+function Components:Keybind(parent, labelText, defaultKey, callback)
+    local frame = Utility:Create("Frame", {
+        Size = UDim2.new(0, 200, 0, 36),
+        BackgroundTransparency = 1
+    }, parent)
+    
+    local label = Utility:Create("TextLabel", {
+        Size = UDim2.new(0, 100, 1, 0),
+        BackgroundTransparency = 1,
+        Text = labelText,
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 13,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, frame)
+    
+    local keyButton = Utility:Create("TextButton", {
+        Size = UDim2.new(0, 80, 1, 0),
+        Position = UDim2.new(0, 100, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(45, 50, 55),
+        Text = defaultKey or "None",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        BorderSizePixel = 0
+    }, frame)
+    
+    local listening = false
+    local currentKey = defaultKey
+    
+    keyButton.MouseButton1Click:Connect(function()
+        listening = true
+        keyButton.Text = "..."
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if listening and not gameProcessed then
+                local key = input.KeyCode.Name
+                if key ~= "Unknown" then
+                    listening = false
+                    currentKey = key
+                    keyButton.Text = key
+                    if callback then callback(key) end
+                    connection:Disconnect()
+                end
+            end
+        end)
+        task.wait(3)
+        if listening then
+            listening = false
+            keyButton.Text = currentKey or "None"
+            connection:Disconnect()
+        end
+    end)
+    
+    return {getKey = function() return currentKey end}
+end
+
+function Components:ColorPicker(parent, labelText, defaultColor, callback)
+    local frame = Utility:Create("Frame", {
+        Size = UDim2.new(0, 250, 0, 60),
+        BackgroundTransparency = 1
+    }, parent)
+    
+    local label = Utility:Create("TextLabel", {
+        Size = UDim2.new(0, 100, 1, 0),
+        BackgroundTransparency = 1,
+        Text = labelText,
+        TextColor3 = Color3.fromRGB(220, 220, 220),
+        TextSize = 13,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, frame)
+    
+    local colorDisplay = Utility:Create("Frame", {
+        Size = UDim2.new(0, 40, 0, 30),
+        Position = UDim2.new(0, 100, 0, 15),
+        BackgroundColor3 = defaultColor or Color3.fromRGB(230, 126, 34),
+        BorderSizePixel = 0
+    }, frame)
+    
+    local pickerFrame = Utility:Create("Frame", {
+        Size = UDim2.new(0, 200, 0, 0),
+        Position = UDim2.new(0, 100, 0, 50),
+        BackgroundColor3 = Color3.fromRGB(40, 45, 50),
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Visible = false
+    }, frame)
+    
+    -- Simple hue slider for color picker
+    local hueSlider = Utility:Create("Frame", {
+        Size = UDim2.new(0, 160, 0, 12),
+        Position = UDim2.new(0, 20, 0, 20),
+        BackgroundColor3 = Color3.fromRGB(255, 0, 0),
+        BorderSizePixel = 0
+    }, pickerFrame)
+    
+    local function updateColor()
+        if callback then callback(colorDisplay.BackgroundColor3) end
+    end
+    
+    colorDisplay.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            pickerFrame.Visible = true
+            Utility:Tween(pickerFrame, {Size = UDim2.new(0, 200, 0, 80)}, 0.25)
+        end
+    end)
+    
+    updateColor()
+    return colorDisplay
+end
+
+-- Amazon-style Main UI Class
+local AmazonUI = {}
+AmazonUI.__index = AmazonUI
+
+function AmazonUI.new()
+    local self = setmetatable({}, AmazonUI)
+    
+    self.config = ConfigSystem:Load()
+    ConfigSystem.onChange = function(key, value)
+        if key == "watermarkEnabled" and self.watermarkFrame then
+            self.watermarkFrame.Visible = value
+        end
+    end
+    
+    self:CreateMainFrame()
+    self:CreateWatermark()
+    self:CreateFloatingButtons()
+    self:SetupMobileDetection()
+    self:SetupSearchFilter()
+    
+    NotificationSystem.container = self.mainFrame
+    
+    return self
+end
+
+function AmazonUI:CreateMainFrame()
+    self.screenSize = UserInputService:GetScreenSize()
+    local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+    
+    local windowSize = isMobile and UDim2.new(0.9, 0, 0.8, 0) or UDim2.new(0, 800, 0, 600)
+    
+    self.mainFrame = Utility:Create("ScreenGui", {
+        Name = "AmazonUI",
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    }, game:GetService("CoreGui"))
+    
+    self.window = Utility:Create("Frame", {
+        Size = windowSize,
+        Position = UDim2.new(0.5, -windowSize.X.Offset/2, 0.5, -windowSize.Y.Offset/2),
+        BackgroundColor3 = Color3.fromRGB(23, 27, 32),
+        BorderSizePixel = 0,
+        ClipsDescendants = true
+    }, self.mainFrame)
+    
+    Utility:Create("UICorner", {CornerRadius = UDim.new(0, 12)}, self.window)
+    Utility:Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 4),
+        BackgroundColor3 = Color3.fromRGB(230, 126, 34)
+    }, self.window)
+    
+    -- Header
+    self.header = Utility:Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 60),
+        BackgroundColor3 = Color3.fromRGB(30, 34, 39),
+        BorderSizePixel = 0
+    }, self.window)
+    
+    local logo = Utility:Create("TextLabel", {
+        Size = UDim2.new(0, 150, 1, 0),
+        BackgroundTransparency = 1,
+        Text = " AMAZON UI",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 18,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, self.header)
+    
+    -- Search Bar
+    self.searchBox = Utility:Create("TextBox", {
+        Size = UDim2.new(0, 300, 0, 36),
+        Position = UDim2.new(0.5, -150, 0.5, -18),
+        BackgroundColor3 = Color3.fromRGB(45, 50, 55),
+        PlaceholderText = "Search components...",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        PlaceholderColor3 = Color3.fromRGB(150, 155, 160),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        BorderSizePixel = 0
+    }, self.header)
+    
+    Utility:Create("UICorner", {CornerRadius = UDim.new(0, 6)}, self.searchBox)
+    
+    -- Sidebar
+    self.sidebar = Utility:Create("Frame", {
+        Size = UDim2.new(0, 200, 1, -60),
+        Position = UDim2.new(0, 0, 0, 60),
+        BackgroundColor3 = Color3.fromRGB(27, 31, 36),
+        BorderSizePixel = 0
+    }, self.window)
+    
+    -- Content Area
+    self.contentArea = Utility:Create("ScrollingFrame", {
+        Size = UDim2.new(1, -200, 1, -60),
+        Position = UDim2.new(0, 200, 0, 60),
+        BackgroundColor3 = Color3.fromRGB(23, 27, 32),
+        BorderSizePixel = 0,
+        ScrollBarThickness = 6,
+        ScrollBarImageColor3 = Color3.fromRGB(230, 126, 34),
+        CanvasSize = UDim2.new(0, 0, 0, 0)
+    }, self.window)
+    
+    self.contentLayout = Utility:Create("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 16)
+    }, self.contentArea)
+    
+    Utility:Create("UIPadding", {PaddingLeft = UDim.new(0, 20), PaddingRight = UDim.new(0, 20), PaddingTop = UDim.new(0, 20)}, self.contentArea)
+    
+    -- Make draggable
+    DraggableManager:MakeDraggable(self.window, self.header)
+end
+
+function AmazonUI:CreateWatermark()
+    self.watermarkFrame = Utility:Create("Frame", {
+        Size = UDim2.new(0, 180, 0, 24),
+        Position = UDim2.new(0, 10, 1, -34),
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0.6,
+        Visible = self.config.watermarkEnabled
+    }, self.mainFrame)
+    
+    Utility:Create("UICorner", {CornerRadius = UDim.new(0, 12)}, self.watermarkFrame)
+    
+    self.watermarkText = Utility:Create("TextLabel", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "FPS: 0 | Ping: 0 | Time: --:--:--",
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 11,
+        Font = Enum.Font.Gotham
+    }, self.watermarkFrame)
+    
+    task.spawn(function()
+        local lastTime = tick()
+        local frameCount = 0
+        while self.watermarkFrame and self.watermarkFrame.Parent do
+            frameCount = frameCount + 1
+            local now = tick()
+            if now - lastTime >= 1 then
+                local fps = frameCount
+                frameCount = 0
+                lastTime = now
+                
+                local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue() or 0)
+                local timeString = os.date("%H:%M:%S")
+                
+                self.watermarkText.Text = string.format("FPS: %d | Ping: %dms | Time: %s", fps, ping, timeString)
+            end
+            task.wait()
+        end
+    end)
+end
+
+function AmazonUI:CreateFloatingButtons()
+    local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+    
+    -- Toggle UI Button
+    self.toggleButton = Utility:Create("TextButton", {
+        Size = UDim2.new(0, 50, 0, 50),
+        Position = UDim2.new(1, -60, 0, 100),
+        BackgroundColor3 = Color3.fromRGB(230, 126, 34),
+        Text = "UI",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 14,
+        Font = Enum.Font.GothamBold,
+        BorderSizePixel = 0,
+        Visible = isMobile
+    }, self.mainFrame)
+    
+    Utility:Create("UICorner", {CornerRadius = UDim.new(1, 0)}, self.toggleButton)
+    
+    -- Lock Button
+    self.lockButton = Utility:Create("TextButton", {
+        Size = UDim2.new(0, 50, 0, 50),
+        Position = UDim2.new(1, -60, 0, 160),
+        BackgroundColor3 = Color3.fromRGB(60, 65, 70),
+        Text = "🔒",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 20,
+        BorderSizePixel = 0,
+        Visible = isMobile
+    }, self.mainFrame)
+    
+    Utility:Create("UICorner", {CornerRadius = UDim.new(1, 0)}, self.lockButton)
+    
+    local windowVisible = true
+    local draggableEnabled = true
+    
+    self.toggleButton.MouseButton1Click:Connect(function()
+        windowVisible = not windowVisible
+        self.window.Visible = windowVisible
+        self.toggleButton.BackgroundColor3 = windowVisible and Color3.fromRGB(230, 126, 34) or Color3.fromRGB(100, 100, 100)
+    end)
+    
+    self.lockButton.MouseButton1Click:Connect(function()
+        draggableEnabled = not draggableEnabled
+        self.lockButton.Text = draggableEnabled and "🔓" or "🔒"
+        self.lockButton.BackgroundColor3 = draggableEnabled and Color3.fromRGB(60, 65, 70) or Color3.fromRGB(230, 126, 34)
+    end)
+end
+
+function AmazonUI:SetupMobileDetection()
+    local function handleResize()
+        local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+        local screenSize = UserInputService:GetScreenSize()
+        
+        if isMobile then
+            self.window.Size = UDim2.new(0.92, 0, 0.75, 0)
+            self.window.Position = UDim2.new(0.04, 0, 0.125, 0)
+            self.sidebar.Size = UDim2.new(0, 160, 1, -60)
+            self.contentArea.Size = UDim2.new(1, -160, 1, -60)
+            self.contentArea.Position = UDim2.new(0, 160, 0, 60)
+            self.searchBox.Size = UDim2.new(0, 200, 0, 36)
+            self.toggleButton.Visible = true
+            self.lockButton.Visible = true
+        else
+            self.toggleButton.Visible = false
+            self.lockButton.Visible = false
+        end
+    end
+    
+    UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(handleResize)
+    UserInputService:GetPropertyChangedSignal("MouseEnabled"):Connect(handleResize)
+    handleResize()
+end
+
+function AmazonUI:SetupSearchFilter()
+    local function filterContent(searchTerm)
+        searchTerm = searchTerm:lower()
+        for _, child in ipairs(self.contentArea:GetChildren()) do
+            if child:IsA("Frame") and child.Name == "SectionCard" then
+                local found = searchTerm == "" or child:FindFirstChild("Title") and child.Title.Text:lower():find(searchTerm)
+                child.Visible = found
+                if found then
+                    for _, component in ipairs(child:GetChildren()) do
+                        if component:IsA("Frame") and component.Name ~= "Title" then
+                            component.Visible = true
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    self.searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        filterContent(self.searchBox.Text)
+    end)
+end
+
+function AmazonUI:CreateSection(title)
+    local section = Utility:Create("Frame", {
+        Name = "SectionCard",
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(30, 34, 39),
+        BorderSizePixel = 0,
+        AutomaticSize = Enum.AutomaticSize.Y
+    }, self.contentArea)
+    
+    Utility:Create("UICorner", {CornerRadius = UDim.new(0, 8)}, section)
+    Utility:Create("UIStroke", {Color = Color3.fromRGB(40, 45, 50), Thickness = 1}, section)
+    
+    local titleLabel = Utility:Create("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(1, -24, 0, 36),
+        Position = UDim2.new(0, 12, 0, 8),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = Color3.fromRGB(230, 126, 34),
+        TextSize = 16,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, section)
+    
+    local contentContainer = Utility:Create("Frame", {
+        Size = UDim2.new(1, -24, 0, 0),
+        Position = UDim2.new(0, 12, 0, 48),
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y
+    }, section)
+    
+    local listLayout = Utility:Create("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 12)
+    }, contentContainer)
+    
+    return {
+        container = contentContainer,
+        addComponent = function(componentFunc, ...)
+            return componentFunc(contentContainer, ...)
+        end
+    }
+end
+
+function AmazonUI:AddTab(name, icon)
+    local tabButton = Utility:Create("TextButton", {
+        Size = UDim2.new(1, 0, 0, 44),
+        BackgroundColor3 = Color3.fromRGB(27, 31, 36),
+        Text = "  " .. name,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        BorderSizePixel = 0
+    }, self.sidebar)
+    
+    local hoverTween = TweenService:Create(tabButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(35, 39, 44)})
+    tabButton.MouseEnter:Connect(function() hoverTween:Play() end)
+    tabButton.MouseLeave:Connect(function()
+        if self.activeTab ~= tabButton then
+            TweenService:Create(tabButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(27, 31, 36)}):Play()
+        end
+    end)
+    
+    local sectionGroup = {}
+    
+    tabButton.MouseButton1Click:Connect(function()
+        if self.activeTab then
+            TweenService:Create(self.activeTab, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(27, 31, 36), TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
+        end
+        self.activeTab = tabButton
+        TweenService:Create(tabButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(230, 126, 34), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        
+        for _, section in pairs(sectionGroup) do
+            section.container.Parent = self.contentArea
+        end
+        for _, other in pairs(self.sections or {}) do
+            if other ~= sectionGroup then
+                for _, section in pairs(other) do
+                    section.container.Parent = nil
+                end
+            end
+        end
+    end)
+    
+    self.sections = self.sections or {}
+    table.insert(self.sections, sectionGroup)
+    
+    return {
+        createSection = function(title)
+            local section = self:CreateSection(title)
+            table.insert(sectionGroup, section)
+            return section
+        end
+    }
+end
+
+function AmazonUI:ShowNotification(title, message, duration, type)
+    NotificationSystem:Show(title, message, duration, type)
+end
+
+-- Example Usage / Demo
+local ui = AmazonUI.new()
+
+-- Create Tabs
+local homeTab = ui:AddTab("Home")
+local settingsTab = ui:AddTab("Settings")
+local componentsTab = ui:AddTab("Components")
+
+-- Home Tab Sections
+local welcomeSection = homeTab:createSection("Welcome")
+welcomeSection:addComponent(Components.Label, "Welcome to Amazon UI!", 24, true)
+welcomeSection:addComponent(Components.Label, "A premium e-commerce style dashboard for Roblox", 14, false)
+
+local actionsSection = homeTab:createSection("Quick Actions")
+actionsSection:addComponent(Components.Button, "Show Notification", function()
+    ui:ShowNotification("Welcome", "Thanks for using Amazon UI!", 3, "success")
+end, 160, 40)
+
+-- Components Tab
+local buttonsSection = componentsTab:createSection("Buttons")
+buttonsSection:addComponent(Components.Button, "Primary Button", function()
+    print("Primary clicked")
+end, 140, 38)
+buttonsSection:addComponent(Components.Button, "Secondary Button", function()
+    print("Secondary clicked")
+end, 140, 38)
+
+local togglesSection = componentsTab:createSection("Toggles")
+local toggle1 = togglesSection:addComponent(Components.Toggle, "Enable Feature", true, function(state)
+    print("Feature enabled:", state)
+end)
+
+local slidersSection = componentsTab:createSection("Sliders")
+local volumeSlider = slidersSection:addComponent(Components.Slider, "Volume", 0, 100, 75, function(value)
+    print("Volume:", value)
+end)
+
+local dropdownsSection = componentsTab:createSection("Dropdowns")
+local colorDropdown = dropdownsSection:addComponent(Components.Dropdown, "Theme", {"Dark", "Light", "Amazon"}, false, {"Dark"}, function(value)
+    print("Theme selected:", value)
+end)
+
+local keybindsSection = componentsTab:createSection("Keybinds")
+local menuKeybind = keybindsSection:addComponent(Components.Keybind, "Open Menu", "F1", function(key)
+    print("Keybind set to:", key)
+end)
+
+local colorSection = componentsTab:createSection("Color Picker")
+local accentColor = colorSection:addComponent(Components.ColorPicker, "Accent Color", Color3.fromRGB(230, 126, 34), function(color)
+    print("Color changed:", color)
+end)
+
+-- Settings Tab
+local prefSection = settingsTab:createSection("Preferences")
+local autoSaveToggle = prefSection:addComponent(Components.Toggle, "Auto Save Settings", ui.config.autoSave, function(state)
+    ui.config.autoSave = state
+    ConfigSystem:Set("autoSave", state)
+end)
+
+local watermarkToggle = prefSection:addComponent(Components.Toggle, "Show Watermark", ui.config.watermarkEnabled, function(state)
+    ui.config.watermarkEnabled = state
+    ConfigSystem:Set("watermarkEnabled", state)
+    if ui.watermarkFrame then
+        ui.watermarkFrame.Visible = state
+    end
+end)
+
+local aboutSection = settingsTab:createSection("About")
+aboutSection:addComponent(Components.Label, "Amazon UI Library v1.0", 14, true)
+aboutSection:addComponent(Components.Label, "A premium Roblox UI framework inspired by Amazon's design system", 12, false)
+
+-- Activate Home Tab by default
+local defaultTab = ui.sections[1]
+for _, section in pairs(defaultTab) do
+    section.container.Parent = ui.contentArea
+end
+
+-- Demo notification
+task.wait(1)
+ui:ShowNotification("Amazon UI", "Library loaded successfully!", 3, "success")
+
+return AmazonUI
