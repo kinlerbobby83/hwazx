@@ -60,13 +60,6 @@ ModalElement.Text = ""
 ModalElement.ZIndex = -999
 ModalElement.Parent = ModalScreenGui
 
---[[
-    You can access Toggles & Options through (I'm planning to remove **a** option):
-        a) getgenv().Toggles, getgenv().Options (IY will break this getgenv)
-        b) getgenv().Linoria.Toggles, getgenv().Linoria.Options
-        c) Library.Toggles, Library.Options
---]]
-
 local Toggles = {};
 local Options = {};
 local Labels = {};
@@ -91,22 +84,22 @@ local Library = {
 
     HudRegistry = {};
 
-    FontColor = Color3.fromRGB(255, 255, 255);
-    MainColor = Color3.fromRGB(30, 30, 47);      -- Darker base
-    BackgroundColor = Color3.fromRGB(24, 24, 37); -- Slightly darker for contrast
+    FontColor = Color3.fromRGB(230, 230, 230);
+    MainColor = Color3.fromRGB(25, 25, 30);
+    BackgroundColor = Color3.fromRGB(18, 18, 22);
 
-    AccentColor = Color3.fromRGB(203, 166, 247);  -- Neon purple
-    DisabledAccentColor = Color3.fromRGB(88, 88, 104);
+    AccentColor = Color3.fromRGB(108, 92, 231);
+    DisabledAccentColor = Color3.fromRGB(80, 70, 160);
 
-    OutlineColor = Color3.fromRGB(49, 50, 68);
-    DisabledOutlineColor = Color3.fromRGB(68, 71, 90);
+    OutlineColor = Color3.fromRGB(45, 45, 55);
+    DisabledOutlineColor = Color3.fromRGB(60, 60, 70);
 
-    DisabledTextColor = Color3.fromRGB(128, 128, 142);
+    DisabledTextColor = Color3.fromRGB(120, 120, 140);
 
-    RiskColor = Color3.fromRGB(255, 85, 85);
+    RiskColor = Color3.fromRGB(255, 80, 80);
 
     Black = Color3.new(0, 0, 0);
-    Font = Enum.Font.Gotham,  -- Modern font
+    Font = Enum.Font.GothamSemibold,
 
     OpenedFrames = {};
     DependencyBoxes = {};
@@ -140,10 +133,11 @@ local Library = {
 
 pcall(function() Library.DevicePlatform = InputService:GetPlatform(); end);
 Library.IsMobile = (Library.DevicePlatform == Enum.Platform.Android or Library.DevicePlatform == Enum.Platform.IOS);
+
 if Library.IsMobile then
     Library.MinSize = Vector2.new(550 * 0.88, 200 * 0.88)
 else
-    Library.MinSize = Vector2.new(750, 500)  -- Slightly wider for sidebar
+    Library.MinSize = Vector2.new(550, 300)
 end
 
 local RainbowStep = 0
@@ -236,7 +230,7 @@ function Library:SetDPIScale(value: number)
     if Library.IsMobile then
         Library.MinSize = Vector2.new(550 * 0.88, 200 * 0.88) * DPIScale;
     else
-        Library.MinSize = Vector2.new(750, 500) * DPIScale;
+        Library.MinSize = Vector2.new(550, 300) * DPIScale;
     end
 end;
 
@@ -380,6 +374,11 @@ function Library:MakeDraggable(Instance, Cutoff, IsMainWindow)
             end;
         end);
         InputService.TouchMoved:Connect(function(Input)
+            if IsMainWindow == true and Library.CantDragForced == true then
+                Dragging = false;
+                return;
+            end
+
             if Input == DraggingInput and Dragging and (IsMainWindow == true and (Library.CanDrag == true and Library.Window.Holder.Visible == true) or true) then
                 local OffsetPos = Input.Position - DraggingStart;
 
@@ -531,24 +530,28 @@ function Library:AddToolTip(InfoStr, DisabledInfoStr, HoverInstance)
     local Tooltip = Library:Create('Frame', {
         BackgroundColor3 = Library.MainColor;
         BorderColor3 = Library.OutlineColor;
+
         ZIndex = 100;
         Parent = Library.ScreenGui;
+
         Visible = false;
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 8);
+        CornerRadius = UDim.new(0, 4);
         Parent = Tooltip;
     });
 
     local Label = Library:CreateLabel({
         Position = UDim2.fromOffset(3, 1);
+        
         TextSize = 14;
         Text = InfoStr;
         TextColor3 = Library.FontColor;
         TextXAlignment = Enum.TextXAlignment.Left;
         ZIndex = Tooltip.ZIndex + 1;
         RichText = true;
+
         Parent = Tooltip;
     });
 
@@ -564,6 +567,7 @@ function Library:AddToolTip(InfoStr, DisabledInfoStr, HoverInstance)
     local TooltipTable = {
         Tooltip = Tooltip;
         Disabled = false;
+
         Signals = {};
     }
     local IsHovering = false
@@ -633,6 +637,7 @@ function Library:AddToolTip(InfoStr, DisabledInfoStr, HoverInstance)
 
     function TooltipTable:Destroy()
         Tooltip:Destroy();
+
         for Idx = #TooltipTable.Signals, 1, -1 do
             local Connection = table.remove(TooltipTable.Signals, Idx);
             Connection:Disconnect();
@@ -851,7 +856,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = DisplayFrame;
         });
 
@@ -865,7 +870,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = CheckerFrame;
         });
 
@@ -881,7 +886,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 10);
+            CornerRadius = UDim.new(0, 6);
             Parent = PickerFrameOuter;
         });
 
@@ -899,7 +904,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 10);
+            CornerRadius = UDim.new(0, 6);
             Parent = PickerFrameInner;
         });
 
@@ -929,7 +934,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 4);
             Parent = SatVibMapInner;
         });
 
@@ -942,7 +947,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 4);
             Parent = SatVibMap;
         });
 
@@ -982,7 +987,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 4);
             Parent = HueSelectorInner;
         });
 
@@ -1013,7 +1018,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 4);
             Parent = HueBoxInner;
         });
 
@@ -1059,7 +1064,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 4);
             Parent = RgbBoxBase.Frame;
         });
 
@@ -1084,7 +1089,7 @@ do
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 8);
+                CornerRadius = UDim.new(0, 4);
                 Parent = TransparencyBoxInner;
             });
 
@@ -1099,7 +1104,7 @@ do
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 8);
+                CornerRadius = UDim.new(0, 4);
                 Parent = Library:Create('Frame', {Parent = TransparencyBoxInner});
             });
 
@@ -1118,7 +1123,7 @@ do
             Position = UDim2.fromOffset(5, 5);
             TextXAlignment = Enum.TextXAlignment.Left;
             TextSize = 14;
-            Text = ColorPicker.Title;
+            Text = ColorPicker.Title,
             TextWrapped = false;
             RichText = true;
             ZIndex = 16;
@@ -1131,12 +1136,13 @@ do
             ContextMenu.Container = Library:Create('Frame', {
                 BorderColor3 = Color3.new(),
                 ZIndex = 14,
+
                 Visible = false,
                 Parent = ScreenGui
             })
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 10);
+                CornerRadius = UDim.new(0, 6);
                 Parent = ContextMenu.Container;
             });
 
@@ -1146,11 +1152,11 @@ do
                 BorderMode = Enum.BorderMode.Inset;
                 Size = UDim2.fromScale(1, 1);
                 ZIndex = 15;
-                Parent = ContextMenu.Inner;
+                Parent = ContextMenu.Container;
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 10);
+                CornerRadius = UDim.new(0, 6);
                 Parent = ContextMenu.Inner;
             });
 
@@ -1203,6 +1209,7 @@ do
                 if Library.IsMobile then
                     Library.CanDrag = false;
                 end;
+
                 self.Container.Visible = true;
             end
 
@@ -1210,6 +1217,7 @@ do
                 if Library.IsMobile then
                     Library.CanDrag = true;
                 end;
+                
                 self.Container.Visible = false;
             end
 
@@ -1238,6 +1246,7 @@ do
                     if Input.UserInputType ~= Enum.UserInputType.MouseButton1 or Input.UserInputType ~= Enum.UserInputType.Touch then
                         return
                     end
+
                     Callback()
                 end)
             end
@@ -1254,6 +1263,7 @@ do
                 ColorPicker:SetValueRGB(Library.ColorClipboard)
             end)
 
+
             ContextMenu:AddOption('Copy HEX', function()
                 pcall(setclipboard, ColorPicker.Value:ToHex())
                 Library:Notify('Copied hex code to clipboard!', 2)
@@ -1263,12 +1273,14 @@ do
                 pcall(setclipboard, table.concat({ math.floor(ColorPicker.Value.R * 255), math.floor(ColorPicker.Value.G * 255), math.floor(ColorPicker.Value.B * 255) }, ', '))
                 Library:Notify('Copied RGB values to clipboard!', 2)
             end)
+
         end
         ColorPicker.ContextMenu = ContextMenu;
 
         Library:AddToRegistry(PickerFrameInner, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
         Library:AddToRegistry(Highlight, { BackgroundColor3 = 'AccentColor'; });
         Library:AddToRegistry(SatVibMapInner, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
+
         Library:AddToRegistry(HueBoxInner, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'OutlineColor'; });
         Library:AddToRegistry(RgbBoxBase.Frame, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'OutlineColor'; });
         Library:AddToRegistry(RgbBox, { TextColor3 = 'FontColor', });
@@ -1293,6 +1305,7 @@ do
                     ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color3.toHSV(result)
                 end
             end
+
             ColorPicker:Display()
         end)
 
@@ -1303,6 +1316,7 @@ do
                     ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color3.toHSV(Color3.fromRGB(r, g, b))
                 end
             end
+
             ColorPicker:Display()
         end)
 
@@ -1333,6 +1347,7 @@ do
 
         function ColorPicker:OnChanged(Func)
             ColorPicker.Changed = Func;
+            
             Library:SafeCallback(Func, ColorPicker.Value, ColorPicker.Transparency);
         end;
 
@@ -1347,6 +1362,7 @@ do
                     Library.OpenedFrames[Frame] = nil;
                 end;
             end;
+
             PickerFrameOuter.Visible = true;
             Library.OpenedFrames[PickerFrameOuter] = true;
         end;
@@ -1358,6 +1374,7 @@ do
 
         function ColorPicker:SetValue(HSV, Transparency)
             local Color = Color3.fromHSV(HSV[1], HSV[2], HSV[3]);
+
             ColorPicker.Transparency = Transparency or 0;
             ColorPicker:SetHSVFromRGB(Color);
             ColorPicker:Display();
@@ -1386,6 +1403,7 @@ do
 
                     RenderStepped:Wait();
                 end;
+
                 Library:AttemptSave();
             end;
         end);
@@ -1402,6 +1420,7 @@ do
 
                     RenderStepped:Wait();
                 end;
+
                 Library:AttemptSave();
             end;
         end);
@@ -1410,6 +1429,7 @@ do
             if Library:MouseIsOverOpenedFrame(Input) then
                 return;
             end;
+
             if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 if PickerFrameOuter.Visible then
                     ColorPicker:Hide()
@@ -1432,9 +1452,12 @@ do
                         local MouseX = math.clamp(Mouse.X, MinX, MaxX);
 
                         ColorPicker.Transparency = 1 - ((MouseX - MinX) / (MaxX - MinX));
+
                         ColorPicker:Display();
+
                         RenderStepped:Wait();
                     end;
+
                     Library:AttemptSave();
                 end;
             end);
@@ -1443,14 +1466,18 @@ do
         Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
             if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 local AbsPos, AbsSize = PickerFrameOuter.AbsolutePosition, PickerFrameOuter.AbsoluteSize;
+
                 if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
                     or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+
                     ColorPicker:Hide();
                 end;
+
                 if not Library:MouseIsOverFrame(ContextMenu.Container) then
                     ContextMenu:Hide()
                 end
             end;
+
             if Input.UserInputType == Enum.UserInputType.MouseButton2 and ContextMenu.Container.Visible then
                 if not Library:MouseIsOverFrame(ContextMenu.Container) and not Library:MouseIsOverFrame(DisplayFrame) then
                     ContextMenu:Hide()
@@ -1462,6 +1489,7 @@ do
         ColorPicker.DisplayFrame = DisplayFrame
 
         Options[Idx] = ColorPicker;
+
         return self;
     end;
 
@@ -1495,7 +1523,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = PickOuter;
         });
 
@@ -1509,7 +1537,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = PickInner;
         });
 
@@ -1538,7 +1566,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = ModeSelectOuter;
         });
 
@@ -1556,7 +1584,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = ModeSelectInner;
         });
 
@@ -1592,7 +1620,7 @@ do
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 6);
+                CornerRadius = UDim.new(0, 4);
                 Parent = KeybindsToggleOuter;
             });
 
@@ -1610,7 +1638,7 @@ do
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 6);
+                CornerRadius = UDim.new(0, 4);
                 Parent = KeybindsToggleInner;
             });
 
@@ -1674,14 +1702,18 @@ do
 
             function KeybindsToggle:SetNormal(bool)
                 KeybindsToggle.Normal = bool
+
                 KeybindsToggleOuter.BackgroundTransparency = if KeybindsToggle.Normal then 1 else 0;
+
                 KeybindsToggleInner.BackgroundTransparency = if KeybindsToggle.Normal then 1 else 0;
                 KeybindsToggleInner.BorderSizePixel = if KeybindsToggle.Normal then 0 else 1;
+
                 KeybindsToggleLabel.Position = if KeybindsToggle.Normal then UDim2.new(1, -13, 0, -1) else UDim2.new(1, 6, 0, -1);
             end
 
             Library:GiveSignal(KeybindsToggleRegion.InputBegan:Connect(function(Input)
                 if KeybindsToggle.Normal then return end
+                                        
                 if (Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame()) or Input.UserInputType == Enum.UserInputType.Touch then
                     KeyPicker.Toggled = not KeyPicker.Toggled;
                     KeyPicker:DoClick()
@@ -1712,14 +1744,18 @@ do
                 for _, Button in next, ModeButtons do
                     Button:Deselect();
                 end;
+
                 KeyPicker.Mode = Mode;
+
                 Label.TextColor3 = Library.AccentColor;
                 Library.RegistryMap[Label].Properties.TextColor3 = 'AccentColor';
+
                 ModeSelectOuter.Visible = false;
             end;
 
             function ModeButton:Deselect()
                 KeyPicker.Mode = nil;
+
                 Label.TextColor3 = Library.FontColor;
                 Library.RegistryMap[Label].Properties.TextColor3 = 'FontColor';
             end;
@@ -1748,6 +1784,7 @@ do
 
             if KeybindsToggle.Loaded then
                 KeybindsToggle:SetNormal(not ShowToggle)
+
                 KeybindsToggle:SetVisibility(true);
                 KeybindsToggle:SetText(string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, KeyPicker.Mode));
                 KeybindsToggle:Display(State);
@@ -1761,6 +1798,7 @@ do
                     YSize = YSize + 18;
                     local Label = Frame:FindFirstChild("TextLabel", true)
                     if not Label then continue end
+
                     if (Label.TextBounds.X > XSize) then
                         XSize = Label.TextBounds.X + 20;
                     end
@@ -1777,7 +1815,9 @@ do
                 if KeyPicker.Value == 'None' then
                     return false;
                 end
+
                 local Key = KeyPicker.Value;
+
                 if Key == 'MB1' then
                     return InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
                 elseif Key == 'MB2' then
@@ -1815,6 +1855,7 @@ do
             if ParentObj.Type == 'Toggle' and KeyPicker.SyncToggleState then
                 ParentObj:SetValue(not ParentObj.Value)
             end
+
             Library:SafeCallback(KeyPicker.Callback, KeyPicker.Toggled)
             Library:SafeCallback(KeyPicker.Clicked, KeyPicker.Toggled)
         end
@@ -1832,23 +1873,31 @@ do
         PickOuter.InputBegan:Connect(function(Input)
             if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
                 Picking = true;
+
                 DisplayLabel.Text = '';
+
                 local Break;
                 local Text = '';
+
                 task.spawn(function()
                     while (not Break) do
                         if Text == '...' then
                             Text = '';
                         end;
+
                         Text = Text .. '.';
                         DisplayLabel.Text = Text;
+
                         task.wait(0.4);
                     end;
                 end);
+
                 task.wait(0.2);
+
                 local Event;
                 Event = InputService.InputBegan:Connect(function(Input)
                     local Key;
+
                     if Input.UserInputType == Enum.UserInputType.Keyboard then
                         Key = Input.KeyCode.Name;
                     elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -1856,13 +1905,18 @@ do
                     elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
                         Key = 'MB2';
                     end;
+
                     Break = true;
                     Picking = false;
+
                     DisplayLabel.Text = Key;
                     KeyPicker.Value = Key;
+
                     Library:SafeCallback(KeyPicker.ChangedCallback, Input.KeyCode or Input.UserInputType)
                     Library:SafeCallback(KeyPicker.Changed, Input.KeyCode or Input.UserInputType)
+
                     Library:AttemptSave();
+
                     Event:Disconnect();
                 end);
             elseif Input.UserInputType == Enum.UserInputType.MouseButton2 and not Library:MouseIsOverOpenedFrame() then
@@ -1872,9 +1926,11 @@ do
 
         Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
             if KeyPicker.Value == "Unknown" then return end
+        
             if (not Picking) and (not InputService:GetFocusedTextBox()) then
                 if KeyPicker.Mode == 'Toggle' then
                     local Key = KeyPicker.Value;
+
                     if Key == 'MB1' or Key == 'MB2' then
                         if Key == 'MB1' and Input.UserInputType == Enum.UserInputType.MouseButton1
                         or Key == 'MB2' and Input.UserInputType == Enum.UserInputType.MouseButton2 then
@@ -1888,12 +1944,16 @@ do
                         end;
                     end;
                 end;
+
                 KeyPicker:Update();
             end;
+
             if Input.UserInputType == Enum.UserInputType.MouseButton1 then
                 local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
+
                 if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
                     or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+
                     KeyPicker:SetModePickerVisibility(false);
                 end;
             end;
@@ -1909,6 +1969,7 @@ do
         KeyPicker.DisplayFrame = PickOuter
 
         Options[Idx] = KeyPicker;
+
         return self;
     end;
 
@@ -1917,6 +1978,7 @@ do
 
         if Info.SpecialType == 'Player' then
             Info.ExcludeLocalPlayer = if typeof(Info.ExcludeLocalPlayer) == "boolean" then Info.ExcludeLocalPlayer else false;
+
             Info.Values = GetPlayers(Info.ExcludeLocalPlayer, Info.ReturnInstanceInstead);
             Info.AllowNull = true;
         elseif Info.SpecialType == 'Team' then
@@ -1940,6 +2002,7 @@ do
             Visible = if typeof(Info.Visible) == "boolean" then Info.Visible else true;
             Disabled = if typeof(Info.Disabled) == "boolean" then Info.Disabled else false;
             Callback = Info.Callback or function(Value) end;
+
             OriginalText = Info.Text; Text = Info.Text;
             ExcludeLocalPlayer = Info.ExcludeLocalPlayer;
             ReturnInstanceInstead = Info.ReturnInstanceInstead;
@@ -1970,7 +2033,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = DropdownOuter;
         });
 
@@ -1988,7 +2051,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = DropdownInner;
         });
 
@@ -2011,22 +2074,29 @@ do
             DropdownInnerSearch = Library:Create('TextBox', {
                 BackgroundTransparency = 1;
                 Visible = false;
+
                 Position = UDim2.new(0, 5, 0, 0);
                 Size = UDim2.new(0.9, -5, 1, 0);
+
                 Font = Library.Font;
                 PlaceholderColor3 = Color3.fromRGB(190, 190, 190);
                 PlaceholderText = 'Search...';
+
                 Text = '';
                 TextColor3 = Library.FontColor;
                 TextSize = 14;
                 TextStrokeTransparency = 0;
                 TextXAlignment = Enum.TextXAlignment.Left;
                 RichText = true;
+
                 ClearTextOnFocus = false;
+
                 ZIndex = 7;
                 Parent = DropdownOuter;
             });
+
             Library:ApplyTextStroke(DropdownInnerSearch);
+
             Library:AddToRegistry(DropdownInnerSearch, {
                 TextColor3 = 'FontColor';
             });
@@ -2079,7 +2149,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = ListOuter;
         });
 
@@ -2109,7 +2179,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = ListInner;
         });
 
@@ -2125,8 +2195,10 @@ do
             Size = UDim2.new(1, 0, 1, 0);
             ZIndex = 21;
             Parent = ListInner;
+
             TopImage = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
             BottomImage = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
+
             ScrollBarThickness = 3,
             ScrollBarImageColor3 = Library.AccentColor,
         });
@@ -2154,10 +2226,12 @@ do
             if Info.Multi then
                 for Idx, Value in next, Values do
                     local StringValue = if typeof(Value) == "Instance" then Value.Name else Value;
+
                     if Dropdown.Value[Value] then
                         Str = Str .. (Info.FormatDisplayValue and tostring(Info.FormatDisplayValue(StringValue)) or StringValue) .. ', ';
                     end;
                 end;
+
                 Str = Str:sub(1, #Str - 2);
                 ItemList.Text = (Str == '' and '--' or Str);
             else
@@ -2165,6 +2239,7 @@ do
                     ItemList.Text = '--';
                     return;
                 end;
+
                 local StringValue = if typeof(Dropdown.Value) == "Instance" then Dropdown.Value.Name else Dropdown.Value;
                 ItemList.Text = Info.FormatDisplayValue and tostring(Info.FormatDisplayValue(StringValue)) or StringValue;
             end;
@@ -2176,9 +2251,11 @@ do
         function Dropdown:GetActiveValues()
             if Info.Multi then
                 local T = {};
+
                 for Value, Bool in next, Dropdown.Value do
                     table.insert(T, Value);
                 end;
+
                 return T;
             else
                 return Dropdown.Value and 1 or 0;
@@ -2220,7 +2297,7 @@ do
                 });
 
                 Library:Create('UICorner', {
-                    CornerRadius = UDim.new(0, 6);
+                    CornerRadius = UDim.new(0, 4);
                     Parent = Button;
                 });
 
@@ -2260,6 +2337,7 @@ do
                     else
                         Selected = Dropdown.Value == Value;
                     end;
+
                     ButtonLabel.TextColor3 = Selected and Library.AccentColor or (IsDisabled and Library.DisabledAccentColor or Library.FontColor);
                     Library.RegistryMap[ButtonLabel].Properties.TextColor3 = Selected and 'AccentColor' or (IsDisabled and 'DisabledAccentColor' or 'FontColor');
                 end;
@@ -2267,10 +2345,12 @@ do
                 if not IsDisabled then
                     Button.MouseButton1Click:Connect(function(Input)
                         local Try = not Selected;
+
                         if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then
                         else
                             if Info.Multi then
                                 Selected = Try;
+
                                 if Selected then
                                     Dropdown.Value[Value] = true;
                                 else
@@ -2278,20 +2358,25 @@ do
                                 end;
                             else
                                 Selected = Try;
+
                                 if Selected then
                                     Dropdown.Value = Value;
                                 else
                                     Dropdown.Value = nil;
                                 end;
+
                                 for _, OtherButton in next, Buttons do
                                     OtherButton:UpdateButton();
                                 end;
                             end;
+
                             Table:UpdateButton();
                             Dropdown:Display();
+                            
                             Library:UpdateDependencyBoxes();
                             Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
                             Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
+
                             Library:AttemptSave();
                         end;
                     end);
@@ -2299,10 +2384,12 @@ do
 
                 Table:UpdateButton();
                 Dropdown:Display();
+
                 Buttons[Button] = Table;
             end;
 
             Scrolling.CanvasSize = UDim2.fromOffset(0, (Count * (20 * DPIScale)) + 1);
+
             Scrolling.Visible = false;
             Scrolling.Visible = true;
 
@@ -2314,6 +2401,7 @@ do
             if NewValues then
                 Dropdown.Values = NewValues;
             end;
+
             Dropdown:BuildDropdownList();
         end;
 
@@ -2327,6 +2415,7 @@ do
             else
                 return;
             end
+
             Dropdown:BuildDropdownList();
         end;
 
@@ -2334,6 +2423,7 @@ do
             if NewValues then
                 Dropdown.DisabledValues = NewValues;
             end;
+
             Dropdown:BuildDropdownList();
         end
 
@@ -2347,23 +2437,28 @@ do
             else
                 return
             end
+
             Dropdown:BuildDropdownList()
         end
 
         function Dropdown:SetVisible(Visibility)
             Dropdown.Visible = Visibility;
+
             DropdownOuter.Visible = Dropdown.Visible;
             if not Dropdown.Visible then Dropdown:CloseDropdown(); end;
         end;
 
         function Dropdown:SetDisabled(Disabled)
             Dropdown.Disabled = Disabled;
+
             if Tooltip then
                 Tooltip.Disabled = Disabled;
             end
+
             if Disabled then
                 Dropdown:CloseDropdown();
             end
+
             Dropdown:Display();
             Dropdown:UpdateColors();
         end;
@@ -2372,17 +2467,21 @@ do
             if Dropdown.Disabled then
                 return;
             end;
+
             if Library.IsMobile then
                 Library.CanDrag = false;
             end;
+
             if Info.Searchable then
                 ItemList.Visible = false;
                 DropdownInnerSearch.Text = "";
                 DropdownInnerSearch.Visible = true;
             end
+
             ListOuter.Visible = true;
             Library.OpenedFrames[ListOuter] = true;
             DropdownArrow.Rotation = 180;
+
             RecalculateListSize();
         end;
 
@@ -2390,11 +2489,13 @@ do
             if Library.IsMobile then         
                 Library.CanDrag = true;
             end;
+
             if Info.Searchable then
                 DropdownInnerSearch.Text = "";
                 DropdownInnerSearch.Visible = false;
                 ItemList.Visible = true;
             end
+
             ListOuter.Visible = false;
             Library.OpenedFrames[ListOuter] = nil;
             DropdownArrow.Rotation = 0;
@@ -2402,20 +2503,24 @@ do
 
         function Dropdown:OnChanged(Func)
             Dropdown.Changed = Func;
+
             if Dropdown.Disabled then
                 return;
             end;
+
             Library:SafeCallback(Func, Dropdown.Value);
         end;
 
         function Dropdown:SetValue(Val)
             if Dropdown.Multi then
                 local nTable = {};
+
                 for Value, Bool in next, Val do
                     if table.find(Dropdown.Values, Value) then
                         nTable[Value] = true
                     end;
                 end;
+
                 Dropdown.Value = nTable;
             else
                 if (not Val) then
@@ -2424,7 +2529,9 @@ do
                     Dropdown.Value = Val;
                 end;
             end;
+
             Dropdown:BuildDropdownList();
+
             if not Dropdown.Disabled then
                 Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
                 Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
@@ -2439,6 +2546,7 @@ do
             if Dropdown.Disabled then
                 return;
             end;
+
             if (Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame()) or Input.UserInputType == Enum.UserInputType.Touch then
                 if ListOuter.Visible then
                     Dropdown:CloseDropdown();
@@ -2458,10 +2566,13 @@ do
             if Dropdown.Disabled then
                 return;
             end;
+
             if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 local AbsPos, AbsSize = ListOuter.AbsolutePosition, ListOuter.AbsoluteSize;
+
                 if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
                     or Mouse.Y < (AbsPos.Y - (20 * DPIScale) - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+
                     Dropdown:CloseDropdown();
                 end;
             end;
@@ -2496,8 +2607,10 @@ do
                 else
                     Dropdown.Value = Dropdown.Values[Index];
                 end
+
                 if (not Info.Multi) then break end
             end
+
             Dropdown:BuildDropdownList();
             Dropdown:Display();
         end
@@ -2510,6 +2623,7 @@ do
         end
 
         Options[Idx] = Dropdown;
+
         return self;
     end;
 
@@ -2527,6 +2641,7 @@ do
     function BaseGroupboxFuncs:AddBlank(Size, Visible)
         local Groupbox = self;
         local Container = Groupbox.Container;
+
         return Library:Create('Frame', {
             BackgroundTransparency = 1;
             Size = UDim2.new(1, 0, 0, Size);
@@ -2543,7 +2658,9 @@ do
             if select(1, ...) ~= nil then
                 assert(typeof(select(1, ...)) == "string", "Expected string for Idx, got " .. typeof(select(1, ...)))
             end
+            
             local Params = select(2, ...)
+
             Data.Text = Params.Text or ""
             Data.DoesWrap = Params.DoesWrap or false
             Data.Idx = select(1, ...)
@@ -2555,7 +2672,10 @@ do
 
         Data.OriginalText = Data.Text;
         
-        local Label = {};
+        local Label = {
+
+        };
+
         local Blank = nil;
         local Groupbox = self;
         local Container = Groupbox.Container;
@@ -2589,10 +2709,12 @@ do
 
         function Label:SetText(Text)
             TextLabel.Text = Text
+
             if Data.DoesWrap then
                 local Y = select(2, Library:GetTextBounds(Text, Library.Font, 14 * DPIScale, Vector2.new(TextLabel.AbsoluteSize.X, math.huge)))
                 TextLabel.Size = UDim2.new(1, -4, 0, Y)
             end
+
             Groupbox:Resize();
         end
 
@@ -2636,7 +2758,7 @@ do
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 8);
+                CornerRadius = UDim.new(0, 6);
                 Parent = Outer;
             });
 
@@ -2650,7 +2772,7 @@ do
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 8);
+                CornerRadius = UDim.new(0, 6);
                 Parent = Inner;
             });
 
@@ -2693,6 +2815,7 @@ do
             local function WaitForEvent(event, timeout, validator)
                 local bindable = Instance.new('BindableEvent')
                 local connection = event:Once(function(...)
+
                     if typeof(validator) == 'function' and validator(...) then
                         bindable:Fire(true)
                     else
@@ -2710,6 +2833,7 @@ do
                 if Library:MouseIsOverOpenedFrame(Input) then
                     return false
                 end
+
                 if Input.UserInputType == Enum.UserInputType.MouseButton1 then
                     return true
                 elseif Input.UserInputType == Enum.UserInputType.Touch then
@@ -2723,12 +2847,14 @@ do
                 if Button.Disabled then
                     return;
                 end;
+
                 if not ValidateClick(Input) then return end
                 if Button.Locked then return end
 
                 if Button.DoubleClick then
                     Library:RemoveFromRegistry(Button.Label)
                     Library:AddToRegistry(Button.Label, { TextColor3 = 'AccentColor' })
+
                     Button.Label.TextColor3 = Library.AccentColor
                     Button.Label.Text = 'Are you sure?'
                     Button.Locked = true
@@ -2737,6 +2863,7 @@ do
 
                     Library:RemoveFromRegistry(Button.Label)
                     Library:AddToRegistry(Button.Label, { TextColor3 = 'FontColor' })
+
                     Button.Label.TextColor3 = Library.FontColor
                     Button.Label.Text = Button.Text
                     task.defer(rawset, Button, 'Locked', false)
@@ -2744,6 +2871,7 @@ do
                     if clicked then
                         Library:SafeCallback(Button.Func)
                     end
+
                     return
                 end
 
@@ -2761,9 +2889,13 @@ do
                 Text = select(1, ...),
                 Func = select(2, ...)
             }
+
             assert(typeof(SubButton.Func) == 'function', 'AddButton: `Func` callback is missing.');
+
             self.Outer.Size = UDim2.new(0.5, -2, 0, 20 * DPIScale)
+
             SubButton.Outer, SubButton.Inner, SubButton.Label = CreateBaseButton(SubButton)
+
             SubButton.Outer.Position = UDim2.new(1, 3, 0, 0)
             SubButton.Outer.Size = UDim2.fromOffset(self.Outer.AbsoluteSize.X - 2, self.Outer.AbsoluteSize.Y)
             SubButton.Outer.Parent = self.Outer
@@ -2777,17 +2909,21 @@ do
                     if SubButton.TooltipTable then
                         SubButton.TooltipTable:Destroy()
                     end
+                
                     SubButton.TooltipTable = Library:AddToolTip(tooltip, disabledTooltip, self.Outer)
                     SubButton.TooltipTable.Disabled = SubButton.Disabled;
                 end
+
                 return SubButton
             end
 
             function SubButton:SetDisabled(Disabled)
                 SubButton.Disabled = Disabled;
+
                 if SubButton.TooltipTable then
                     SubButton.TooltipTable.Disabled = Disabled;
                 end
+
                 SubButton:UpdateColors();
             end;
 
@@ -2805,6 +2941,7 @@ do
 
             task.delay(0.1, SubButton.UpdateColors, SubButton);
             InitEvents(SubButton)
+
             table.insert(Buttons, SubButton);
             return SubButton
         end
@@ -2818,9 +2955,11 @@ do
                 if Button.TooltipTable then
                     Button.TooltipTable:Destroy()
                 end
+
                 Button.TooltipTable = Library:AddToolTip(tooltip, disabledTooltip, self.Outer)
                 Button.TooltipTable.Disabled = Button.Disabled;
             end
+
             return Button
         end;
 
@@ -2831,8 +2970,10 @@ do
 
         function Button:SetVisible(Visibility)
             IsVisible = Visibility;
+
             Button.Outer.Visible = IsVisible;
             if Blank then Blank.Visible = IsVisible end;
+
             Groupbox:Resize();
         end;
 
@@ -2845,15 +2986,18 @@ do
 
         function Button:SetDisabled(Disabled)
             Button.Disabled = Disabled;
+
             if Button.TooltipTable then
                 Button.TooltipTable.Disabled = Disabled;
             end
+
             Button:UpdateColors();
         end;
 
         task.delay(0.1, Button.UpdateColors, Button);
         Blank = Groupbox:AddBlank(5, IsVisible);
         Groupbox:Resize();
+
         table.insert(Buttons, Button);
         return Button;
     end;
@@ -2876,7 +3020,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = DividerOuter;
         });
 
@@ -2890,7 +3034,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = DividerInner;
         });
 
@@ -2918,9 +3062,10 @@ do
             Finished = Info.Finished or false;
             Visible = if typeof(Info.Visible) == "boolean" then Info.Visible else true;
             Disabled = if typeof(Info.Disabled) == "boolean" then Info.Disabled else false;
-            AllowEmpty = if typeof(Info.AllowEmpty) == "boolean" then Info.AllowEmpty else true;
+        AllowEmpty = if typeof(Info.AllowEmpty) == "boolean" then Info.AllowEmpty else true;
             EmptyReset = if typeof(Info.EmptyReset) == "string" then Info.EmptyReset else "---";
             Type = 'Input';
+
             Callback = Info.Callback or function(Value) end;
         };
 
@@ -2949,7 +3094,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = TextBoxOuter;
         });
 
@@ -2963,7 +3108,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = TextBoxInner;
         });
 
@@ -2995,46 +3140,57 @@ do
         local Container = Library:Create('Frame', {
             BackgroundTransparency = 1;
             ClipsDescendants = true;
+
             Position = UDim2.new(0, 5, 0, 0);
             Size = UDim2.new(1, -5, 1, 0);
+
             ZIndex = 7;
             Parent = TextBoxInner;
         })
 
         local Box = Library:Create('TextBox', {
             BackgroundTransparency = 1;
+
             Position = UDim2.fromOffset(0, 0),
             Size = UDim2.fromScale(5, 1),
+
             Font = Library.Font;
             PlaceholderColor3 = Color3.fromRGB(190, 190, 190);
             PlaceholderText = Info.Placeholder or '';
+
             Text = Info.Default or (if Textbox.AllowEmpty == false then Textbox.EmptyReset else "---");
             TextColor3 = Library.FontColor;
             TextSize = 14;
             TextStrokeTransparency = 0;
             TextXAlignment = Enum.TextXAlignment.Left;
             RichText = true;
+
             TextEditable = not Textbox.Disabled;
             ClearTextOnFocus = not Textbox.Disabled and Info.ClearTextOnFocus;
+
             ZIndex = 7;
             Parent = Container;
         });
 
         Library:ApplyTextStroke(Box);
+
         Library:AddToRegistry(Box, {
             TextColor3 = 'FontColor';
         });
 
         function Textbox:OnChanged(Func)
             Textbox.Changed = Func;
+
             if Textbox.Disabled then
                 return;
             end;
+
             Library:SafeCallback(Func, Textbox.Value);
         end;
 
         function Textbox:UpdateColors()
             Box.TextColor3 = Textbox.Disabled and Library.DisabledAccentColor or Library.FontColor;
+
             Library.RegistryMap[Box].Properties.TextColor3 = Textbox.Disabled and 'DisabledAccentColor' or 'FontColor';
         end;
 
@@ -3042,23 +3198,28 @@ do
             TextBoxOuter.Visible = Textbox.Visible;
             InputLabel.Visible = Textbox.Visible;
             if Blank then Blank.Visible = Textbox.Visible; end
+
             Groupbox:Resize();
         end;
 
         function Textbox:SetValue(Text)
-            if not Textbox.AllowEmpty and Trim(Text) == "" then
-                Text = Textbox.EmptyReset;
-            end
+        if not Textbox.AllowEmpty and Trim(Text) == "" then
+        Text = Textbox.EmptyReset;
+        end
+
             if Info.MaxLength and #Text > Info.MaxLength then
                 Text = Text:sub(1, Info.MaxLength);
             end;
+
             if Textbox.Numeric then
                 if (not tonumber(Text)) and Text:len() > 0 then
                     Text = Textbox.Value
                 end
             end
+
             Textbox.Value = Text;
             Box.Text = Text;
+
             if not Textbox.Disabled then
                 Library:SafeCallback(Textbox.Callback, Textbox.Value);
                 Library:SafeCallback(Textbox.Changed, Textbox.Value);
@@ -3067,22 +3228,27 @@ do
 
         function Textbox:SetVisible(Visibility)
             Textbox.Visible = Visibility;
+
             Textbox:Display();
         end;
 
         function Textbox:SetDisabled(Disabled)
             Textbox.Disabled = Disabled;
+
             Box.TextEditable = not Disabled;
             Box.ClearTextOnFocus = not Disabled and Info.ClearTextOnFocus;
+
             if TooltipTable then
                 TooltipTable.Disabled = Disabled;
             end
+
             Textbox:UpdateColors();
         end;
 
         if Textbox.Finished then
             Box.FocusLost:Connect(function(enter)
                 if not enter then return end
+
                 Textbox:SetValue(Box.Text);
                 Library:AttemptSave();
             end)
@@ -3096,6 +3262,7 @@ do
         local function Update()
             local PADDING = 2
             local reveal = Container.AbsoluteSize.X
+
             if not Box:IsFocused() or Box.TextBounds.X <= reveal - 2 * PADDING then
                 Box.Position = UDim2.new(0, PADDING, 0, 0)
             else
@@ -3103,7 +3270,9 @@ do
                 if cursor ~= -1 then
                     local subtext = string.sub(Box.Text, 1, cursor-1)
                     local width = TextService:GetTextSize(subtext, Box.TextSize, Box.Font, Vector2.new(math.huge, math.huge)).X
+
                     local currentCursorPos = Box.Position.X.Offset + width
+
                     if currentCursorPos < PADDING then
                         Box.Position = UDim2.fromOffset(PADDING-width, 0)
                     elseif currentCursorPos > reveal - PADDING - 1 then
@@ -3114,6 +3283,7 @@ do
         end
 
         task.spawn(Update)
+
         Box:GetPropertyChangedSignal('Text'):Connect(Update)
         Box:GetPropertyChangedSignal('CursorPosition'):Connect(Update)
         Box.FocusLost:Connect(Update)
@@ -3125,6 +3295,7 @@ do
         Groupbox:Resize();
 
         Options[Idx] = Textbox;
+
         return Textbox;
     end;
 
@@ -3138,6 +3309,7 @@ do
             Disabled = if typeof(Info.Disabled) == "boolean" then Info.Disabled else false;
             Risky = if typeof(Info.Risky) == "boolean" then Info.Risky else false;
             OriginalText = Info.Text; Text = Info.Text;
+
             Callback = Info.Callback or function(Value) end;
             Addons = {};
         };
@@ -3157,7 +3329,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = ToggleOuter;
         });
 
@@ -3175,7 +3347,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 6);
+            CornerRadius = UDim.new(0, 4);
             Parent = ToggleInner;
         });
 
@@ -3217,6 +3389,7 @@ do
                 if Toggle.Disabled then
                     return false;
                 end;
+
                 for _, Addon in next, Toggle.Addons do
                     if Library:MouseIsOverFrame(Addon.DisplayFrame) then return false end
                 end
@@ -3236,27 +3409,35 @@ do
         function Toggle:Display()
             if Toggle.Disabled then
                 ToggleLabel.TextColor3 = Library.DisabledTextColor;
+
                 ToggleInner.BackgroundColor3 = Toggle.Value and Library.DisabledAccentColor or Library.MainColor;
                 ToggleInner.BorderColor3 = Library.DisabledOutlineColor;
+
                 Library.RegistryMap[ToggleInner].Properties.BackgroundColor3 = Toggle.Value and 'DisabledAccentColor' or 'MainColor';
                 Library.RegistryMap[ToggleInner].Properties.BorderColor3 = 'DisabledOutlineColor';
                 Library.RegistryMap[ToggleLabel].Properties.TextColor3 = 'DisabledTextColor';
+
                 return;
             end;
 
             ToggleLabel.TextColor3 = Toggle.Risky and Library.RiskColor or Color3.new(1, 1, 1);
+
             ToggleInner.BackgroundColor3 = Toggle.Value and Library.AccentColor or Library.MainColor;
             ToggleInner.BorderColor3 = Toggle.Value and Library.AccentColorDark or Library.OutlineColor;
+
             Library.RegistryMap[ToggleInner].Properties.BackgroundColor3 = Toggle.Value and 'AccentColor' or 'MainColor';
             Library.RegistryMap[ToggleInner].Properties.BorderColor3 = Toggle.Value and 'AccentColorDark' or 'OutlineColor';
+
             Library.RegistryMap[ToggleLabel].Properties.TextColor3 = Toggle.Risky and 'RiskColor' or nil;
         end;
 
         function Toggle:OnChanged(Func)
             Toggle.Changed = Func;
+
             if Toggle.Disabled then
                 return;
             end;
+
             Library:SafeCallback(Func, Toggle.Value);
         end;
 
@@ -3264,34 +3445,43 @@ do
             if Toggle.Disabled then
                 return;
             end;
+
             Bool = (not not Bool);
+
             Toggle.Value = Bool;
             Toggle:Display();
+
             for _, Addon in next, Toggle.Addons do
                 if Addon.Type == 'KeyPicker' and Addon.SyncToggleState then
                     Addon.Toggled = Bool
                     Addon:Update()
                 end
             end
+
             if not Toggle.Disabled then
                 Library:SafeCallback(Toggle.Callback, Toggle.Value);
                 Library:SafeCallback(Toggle.Changed, Toggle.Value);
             end;
+
             Library:UpdateDependencyBoxes();
         end;
 
         function Toggle:SetVisible(Visibility)
             Toggle.Visible = Visibility;
+
             ToggleOuter.Visible = Toggle.Visible;
             if Blank then Blank.Visible = Toggle.Visible end;
+
             Groupbox:Resize();
         end;
 
         function Toggle:SetDisabled(Disabled)
             Toggle.Disabled = Disabled;
+
             if Tooltip then
                 Tooltip.Disabled = Disabled;
             end
+
             Toggle:Display();
         end;
 
@@ -3306,10 +3496,12 @@ do
             if Toggle.Disabled then
                 return;
             end;
+
             if (Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame()) or Input.UserInputType == Enum.UserInputType.Touch then
                 for _, Addon in next, Toggle.Addons do
                     if Library:MouseIsOverFrame(Addon.DisplayFrame) then return end
                 end
+
                 Toggle:SetValue(not Toggle.Value)
                 Library:AttemptSave();
             end;
@@ -3317,6 +3509,7 @@ do
 
         if Toggle.Risky == true then
             Library:RemoveFromRegistry(ToggleLabel)
+
             ToggleLabel.TextColor3 = Library.RiskColor
             Library:AddToRegistry(ToggleLabel, { TextColor3 = 'RiskColor' })
         end
@@ -3330,7 +3523,9 @@ do
         setmetatable(Toggle, BaseAddons);
 
         Toggles[Idx] = Toggle;
+
         Library:UpdateDependencyBoxes();
+
         return Toggle;
     end;
 
@@ -3351,8 +3546,10 @@ do
             Visible = if typeof(Info.Visible) == "boolean" then Info.Visible else true;
             Disabled = if typeof(Info.Disabled) == "boolean" then Info.Disabled else false;
             OriginalText = Info.Text; Text = Info.Text;
+
             Prefix = typeof(Info.Prefix) == "string" and Info.Prefix or "";
             Suffix = typeof(Info.Suffix) == "string" and Info.Suffix or "";
+
             Callback = Info.Callback or function(Value) end;
         };
 
@@ -3374,6 +3571,7 @@ do
                 ZIndex = 5;
                 Parent = Container;
             });
+
             table.insert(Blanks, Groupbox:AddBlank(3, Slider.Visible));
         end
 
@@ -3387,7 +3585,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = SliderOuter;
         });
 
@@ -3409,7 +3607,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = SliderInner;
         });
 
@@ -3427,7 +3625,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = Fill;
         });
 
@@ -3476,10 +3674,14 @@ do
                 SliderText.TextColor3 = Slider.Disabled and Library.DisabledAccentColor or Color3.new(1, 1, 1);
             end;
             DisplayLabel.TextColor3 = Slider.Disabled and Library.DisabledAccentColor or Color3.new(1, 1, 1);
+
             HideBorderRight.BackgroundColor3 = Slider.Disabled and Library.DisabledAccentColor or Library.AccentColor;
+
             Fill.BackgroundColor3 = Slider.Disabled and Library.DisabledAccentColor or Library.AccentColor;
             Fill.BorderColor3 = Slider.Disabled and Library.DisabledOutlineColor or Library.AccentColorDark;
+
             Library.RegistryMap[HideBorderRight].Properties.BackgroundColor3 = Slider.Disabled and 'DisabledAccentColor' or 'AccentColor';
+
             Library.RegistryMap[Fill].Properties.BackgroundColor3 = Slider.Disabled and 'DisabledAccentColor' or 'AccentColor';
             Library.RegistryMap[Fill].Properties.BorderColor3 = Slider.Disabled and 'DisabledOutlineColor' or 'AccentColorDark';
         end;
@@ -3492,16 +3694,20 @@ do
             else
                 DisplayLabel.Text = string.format('%s/%s', Slider.Prefix .. Slider.Value .. Slider.Suffix, Slider.Prefix .. Slider.Max .. Slider.Suffix);
             end
+
             local X = Library:MapValue(Slider.Value, Slider.Min, Slider.Max, 0, 1);
             Fill.Size = UDim2.new(X, 0, 1, 0);
+
             HideBorderRight.Visible = not (X == 1 or X == 0);
         end;
 
         function Slider:OnChanged(Func)
             Slider.Changed = Func;
+
             if Slider.Disabled then
                 return;
             end;
+            
             Library:SafeCallback(Func, Slider.Value);
         end;
 
@@ -3509,6 +3715,7 @@ do
             if Slider.Rounding == 0 then
                 return math.floor(Value);
             end;
+
             return tonumber(string.format('%.' .. Slider.Rounding .. 'f', Value))
         end;
 
@@ -3518,6 +3725,7 @@ do
         
         function Slider:SetMax(Value)
             assert(Value > Slider.Min, 'Max value cannot be less than the current min value.');
+            
             Slider.Value = math.clamp(Slider.Value, Slider.Min, Value);
             Slider.Max = Value;
             Slider:Display();
@@ -3525,6 +3733,7 @@ do
         
         function Slider:SetMin(Value)
             assert(Value < Slider.Max, 'Min value cannot be greater than the current max value.');
+
             Slider.Value = math.clamp(Slider.Value, Value, Slider.Max);
             Slider.Min = Value;
             Slider:Display();
@@ -3534,13 +3743,18 @@ do
             if Slider.Disabled then
                 return;
             end;
+
             local Num = tonumber(Str);
+
             if (not Num) then
                 return;
             end;
+
             Num = math.clamp(Num, Slider.Min, Slider.Max);
+
             Slider.Value = Num;
             Slider:Display();
+
             if not Slider.Disabled then
                 Library:SafeCallback(Slider.Callback, Slider.Value);
                 Library:SafeCallback(Slider.Changed, Slider.Value);
@@ -3549,25 +3763,31 @@ do
 
         function Slider:SetVisible(Visibility)
             Slider.Visible = Visibility;
+
             if SliderText then SliderText.Visible = Slider.Visible end;
             SliderOuter.Visible = Slider.Visible;
+
             for _, Blank in pairs(Blanks) do
                 Blank.Visible = Slider.Visible
             end
+
             Groupbox:Resize();
         end;
 
         function Slider:SetDisabled(Disabled)
             Slider.Disabled = Disabled;
+
             if Tooltip then
                 Tooltip.Disabled = Disabled;
             end
+
             Slider:UpdateColors();
         end;
 
         function Slider:SetText(Text)
             if typeof(Text) == "string" then
                 Slider.Text = Text;
+
                 if SliderText then SliderText.Text = Slider.Text end;
                 Slider:Display();
             end
@@ -3591,48 +3811,60 @@ do
             if Slider.Disabled then
                 return;
             end;
+
             if (Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame()) or Input.UserInputType == Enum.UserInputType.Touch then
                 if Library.IsMobile then
                     Library.CanDrag = false;
                 end;
+
                 local Sides = {};
                 if Library.Window then
                     Sides = Library.Window.Tabs[Library.ActiveTab]:GetSides();
                 end
+
                 for _, Side in pairs(Sides) do
                     if typeof(Side) == "Instance" then
                         if Side:IsA("ScrollingFrame") then
                             Side.ScrollingEnabled = false;
                         end
                     end
-                end;
+                end
+
                 local mPos = Mouse.X;
                 local gPos = Fill.AbsoluteSize.X;
                 local Diff = mPos - (Fill.AbsolutePosition.X + gPos);
+
                 while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1 or Enum.UserInputType.Touch) do
                     local nMPos = Mouse.X;
                     local nXOffset = math.clamp(gPos + (nMPos - mPos) + Diff, 0, Slider.MaxSize);
                     local nXScale = Library:MapValue(nXOffset, 0, Slider.MaxSize, 0, 1);
+
                     local nValue = Slider:GetValueFromXScale(nXScale);
                     local OldValue = Slider.Value;
                     Slider.Value = nValue;
+
                     Slider:Display();
+
                     if nValue ~= OldValue then
                         Library:SafeCallback(Slider.Callback, Slider.Value);
                         Library:SafeCallback(Slider.Changed, Slider.Value);
                     end;
+
                     RenderStepped:Wait();
                 end;
+
                 if Library.IsMobile then
                     Library.CanDrag = true;
                 end;
+                
                 for _, Side in pairs(Sides) do
                     if typeof(Side) == "Instance" then
                         if Side:IsA("ScrollingFrame") then
                             Side.ScrollingEnabled = true;
                         end
                     end
-                end;
+                end
+
                 Library:AttemptSave();
             end;
         end);
@@ -3643,6 +3875,7 @@ do
         Groupbox:Resize();
 
         Options[Idx] = Slider;
+
         return Slider;
     end;
 
@@ -3651,6 +3884,7 @@ do
 
         if Info.SpecialType == 'Player' then
             Info.ExcludeLocalPlayer = if typeof(Info.ExcludeLocalPlayer) == "boolean" then Info.ExcludeLocalPlayer else false;
+
             Info.Values = GetPlayers(Info.ExcludeLocalPlayer, Info.ReturnInstanceInstead);
             Info.AllowNull = true;
         elseif Info.SpecialType == 'Team' then
@@ -3678,6 +3912,7 @@ do
             Visible = if typeof(Info.Visible) == "boolean" then Info.Visible else true;
             Disabled = if typeof(Info.Disabled) == "boolean" then Info.Disabled else false;
             Callback = Info.Callback or function(Value) end;
+
             OriginalText = Info.Text; Text = Info.Text;
             ExcludeLocalPlayer = Info.ExcludeLocalPlayer;
             ReturnInstanceInstead = Info.ReturnInstanceInstead;
@@ -3704,6 +3939,7 @@ do
                 ZIndex = 5;
                 Parent = Container;
             });
+
             CompactBlank = Groupbox:AddBlank(3, Dropdown.Visible);
         end
 
@@ -3723,7 +3959,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = DropdownOuter;
         });
 
@@ -3741,7 +3977,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = DropdownInner;
         });
 
@@ -3764,22 +4000,29 @@ do
             DropdownInnerSearch = Library:Create('TextBox', {
                 BackgroundTransparency = 1;
                 Visible = false;
+
                 Position = UDim2.new(0, 5, 0, 0);
                 Size = UDim2.new(0.9, -5, 1, 0);
+
                 Font = Library.Font;
                 PlaceholderColor3 = Color3.fromRGB(190, 190, 190);
                 PlaceholderText = 'Search...';
+
                 Text = '';
                 TextColor3 = Library.FontColor;
                 TextSize = 14;
                 TextStrokeTransparency = 0;
                 TextXAlignment = Enum.TextXAlignment.Left;
                 RichText = true;
+
                 ClearTextOnFocus = false;
+
                 ZIndex = 7;
                 Parent = DropdownOuter;
             });
+
             Library:ApplyTextStroke(DropdownInnerSearch);
+
             Library:AddToRegistry(DropdownInnerSearch, {
                 TextColor3 = 'FontColor';
             });
@@ -3832,7 +4075,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = ListOuter;
         });
 
@@ -3861,7 +4104,7 @@ do
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 8);
+            CornerRadius = UDim.new(0, 6);
             Parent = ListInner;
         });
 
@@ -3877,8 +4120,10 @@ do
             Size = UDim2.new(1, 0, 1, 0);
             ZIndex = 21;
             Parent = ListInner;
+
             TopImage = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
             BottomImage = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
+
             ScrollBarThickness = 3,
             ScrollBarImageColor3 = Library.AccentColor,
         });
@@ -3898,6 +4143,7 @@ do
             if DropdownLabel then
                 DropdownLabel.TextColor3 = Dropdown.Disabled and Library.DisabledAccentColor or Color3.new(1, 1, 1);
             end;
+
             ItemList.TextColor3 = Dropdown.Disabled and Library.DisabledAccentColor or Color3.new(1, 1, 1);
             DropdownArrow.ImageColor3 = Dropdown.Disabled and Library.DisabledAccentColor or Color3.new(1, 1, 1);
         end;
@@ -3909,10 +4155,12 @@ do
             if Info.Multi then
                 for Idx, Value in next, Values do
                     local StringValue = if typeof(Value) == "Instance" then Value.Name else Value;
+
                     if Dropdown.Value[Value] then
                         Str = Str .. (Info.FormatDisplayValue and tostring(Info.FormatDisplayValue(StringValue)) or StringValue) .. ', ';
                     end;
                 end;
+
                 Str = Str:sub(1, #Str - 2);
                 ItemList.Text = (Str == '' and '--' or Str);
             else
@@ -3920,6 +4168,7 @@ do
                     ItemList.Text = '--';
                     return;
                 end;
+
                 local StringValue = if typeof(Dropdown.Value) == "Instance" then Dropdown.Value.Name else Dropdown.Value;
                 ItemList.Text = Info.FormatDisplayValue and tostring(Info.FormatDisplayValue(StringValue)) or StringValue;
             end;
@@ -3928,9 +4177,11 @@ do
         function Dropdown:GetActiveValues()
             if Info.Multi then
                 local T = {};
+
                 for Value, Bool in next, Dropdown.Value do
                     table.insert(T, Value);
                 end;
+
                 return T;
             else
                 return Dropdown.Value and 1 or 0;
@@ -3972,7 +4223,7 @@ do
                 });
 
                 Library:Create('UICorner', {
-                    CornerRadius = UDim.new(0, 6);
+                    CornerRadius = UDim.new(0, 4);
                     Parent = Button;
                 });
 
@@ -4012,6 +4263,7 @@ do
                     else
                         Selected = Dropdown.Value == Value;
                     end;
+
                     ButtonLabel.TextColor3 = Selected and Library.AccentColor or (IsDisabled and Library.DisabledAccentColor or Library.FontColor);
                     Library.RegistryMap[ButtonLabel].Properties.TextColor3 = Selected and 'AccentColor' or (IsDisabled and 'DisabledAccentColor' or 'FontColor');
                 end;
@@ -4019,10 +4271,12 @@ do
                 if not IsDisabled then
                     Button.MouseButton1Click:Connect(function(Input)
                         local Try = not Selected;
+
                         if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then
                         else
                             if Info.Multi then
                                 Selected = Try;
+
                                 if Selected then
                                     Dropdown.Value[Value] = true;
                                 else
@@ -4030,20 +4284,25 @@ do
                                 end;
                             else
                                 Selected = Try;
+
                                 if Selected then
                                     Dropdown.Value = Value;
                                 else
                                     Dropdown.Value = nil;
                                 end;
+
                                 for _, OtherButton in next, Buttons do
                                     OtherButton:UpdateButton();
                                 end;
                             end;
+
                             Table:UpdateButton();
                             Dropdown:Display();
+                            
                             Library:UpdateDependencyBoxes();
                             Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
                             Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
+
                             Library:AttemptSave();
                         end;
                     end);
@@ -4051,10 +4310,12 @@ do
 
                 Table:UpdateButton();
                 Dropdown:Display();
+
                 Buttons[Button] = Table;
             end;
 
             Scrolling.CanvasSize = UDim2.fromOffset(0, (Count * (20 * DPIScale)) + 1);
+
             Scrolling.Visible = false;
             Scrolling.Visible = true;
 
@@ -4066,6 +4327,7 @@ do
             if NewValues then
                 Dropdown.Values = NewValues;
             end;
+
             Dropdown:BuildDropdownList();
         end;
 
@@ -4079,6 +4341,7 @@ do
             else
                 return;
             end
+
             Dropdown:BuildDropdownList();
         end;
 
@@ -4086,6 +4349,7 @@ do
             if NewValues then
                 Dropdown.DisabledValues = NewValues;
             end;
+
             Dropdown:BuildDropdownList();
         end
 
@@ -4099,25 +4363,31 @@ do
             else
                 return
             end
+
             Dropdown:BuildDropdownList()
         end
 
         function Dropdown:SetVisible(Visibility)
             Dropdown.Visible = Visibility;
+
             DropdownOuter.Visible = Dropdown.Visible;
             if DropdownLabel then DropdownLabel.Visible = Dropdown.Visible end;
             if not Dropdown.Visible then Dropdown:CloseDropdown(); end;
+
             Groupbox:Resize();
         end;
 
         function Dropdown:SetDisabled(Disabled)
             Dropdown.Disabled = Disabled;
+
             if Tooltip then
                 Tooltip.Disabled = Disabled;
             end
+
             if Disabled then
                 Dropdown:CloseDropdown();
             end
+
             Dropdown:Display();
             Dropdown:UpdateColors();
         end;
@@ -4126,17 +4396,21 @@ do
             if Dropdown.Disabled then
                 return;
             end;
+
             if Library.IsMobile then
                 Library.CanDrag = false;
             end;
+
             if Info.Searchable then
                 ItemList.Visible = false;
                 DropdownInnerSearch.Text = "";
                 DropdownInnerSearch.Visible = true;
             end
+
             ListOuter.Visible = true;
             Library.OpenedFrames[ListOuter] = true;
             DropdownArrow.Rotation = 180;
+
             RecalculateListSize();
         end;
 
@@ -4144,11 +4418,13 @@ do
             if Library.IsMobile then            
                 Library.CanDrag = true;
             end;
+
             if Info.Searchable then
                 DropdownInnerSearch.Text = "";
                 DropdownInnerSearch.Visible = false;
                 ItemList.Visible = true;
             end
+
             ListOuter.Visible = false;
             Library.OpenedFrames[ListOuter] = nil;
             DropdownArrow.Rotation = 0;
@@ -4156,20 +4432,24 @@ do
 
         function Dropdown:OnChanged(Func)
             Dropdown.Changed = Func;
+
             if Dropdown.Disabled then
                 return;
             end;
+
             Library:SafeCallback(Func, Dropdown.Value);
         end;
 
         function Dropdown:SetValue(Val)
             if Dropdown.Multi then
                 local nTable = {};
+
                 for Value, Bool in next, Val do
                     if table.find(Dropdown.Values, Value) then
                         nTable[Value] = true
                     end;
                 end;
+
                 Dropdown.Value = nTable;
             else
                 if (not Val) then
@@ -4178,7 +4458,9 @@ do
                     Dropdown.Value = Val;
                 end;
             end;
+
             Dropdown:BuildDropdownList();
+
             if not Dropdown.Disabled then
                 Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
                 Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
@@ -4189,6 +4471,7 @@ do
             if typeof(Text) == "string" then
                 if Info.Compact then Info.Compact = false end;
                 Dropdown.Text = Text;
+
                 if DropdownLabel then DropdownLabel.Text = Dropdown.Text end;
                 Dropdown:Display();
             end
@@ -4198,6 +4481,7 @@ do
             if Dropdown.Disabled then
                 return;
             end;
+
             if (Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame()) or Input.UserInputType == Enum.UserInputType.Touch then
                 if ListOuter.Visible then
                     Dropdown:CloseDropdown();
@@ -4217,10 +4501,13 @@ do
             if Dropdown.Disabled then
                 return;
             end;
+
             if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 local AbsPos, AbsSize = ListOuter.AbsolutePosition, ListOuter.AbsoluteSize;
+
                 if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
                     or Mouse.Y < (AbsPos.Y - (20 * DPIScale) - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+
                     Dropdown:CloseDropdown();
                 end;
             end;
@@ -4255,8 +4542,10 @@ do
                 else
                     Dropdown.Value = Dropdown.Values[Index];
                 end
+
                 if (not Info.Multi) then break end
             end
+
             Dropdown:BuildDropdownList();
             Dropdown:Display();
         end
@@ -4266,6 +4555,7 @@ do
         Groupbox:Resize();
 
         Options[Idx] = Dropdown;
+
         return Dropdown;
     end;
 
@@ -4314,12 +4604,14 @@ do
             for _, Dependency in next, Depbox.Dependencies do
                 local Elem = Dependency[1];
                 local Value = Dependency[2];
+
                 if if Elem.Multi then not table.find(Elem:GetActiveValues(), Value) else Elem.Value ~= Value then
                     Holder.Visible = false;
                     Depbox:Resize();
                     return;
                 end;
             end;
+
             Holder.Visible = true;
             Depbox:Resize();
         end;
@@ -4330,13 +4622,17 @@ do
                 assert(Dependency[1], 'SetupDependencies: Dependency is missing element argument.');
                 assert(Dependency[2] ~= nil, 'SetupDependencies: Dependency is missing value argument.');
             end;
+
             Depbox.Dependencies = Dependencies;
             Depbox:Update();
         end;
 
         Depbox.Container = Frame;
+
         setmetatable(Depbox, BaseGroupbox);
+
         table.insert(Library.DependencyBoxes, Depbox);
+
         return Depbox;
     end;
 
@@ -4346,7 +4642,6 @@ do
     end;
 end;
 
--- < Create other UI elements >
 do
     Library.LeftNotificationArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
@@ -4362,6 +4657,7 @@ do
         SortOrder = Enum.SortOrder.LayoutOrder;
         Parent = Library.LeftNotificationArea;
     });
+
 
     Library.RightNotificationArea = Library:Create('Frame', {
         AnchorPoint = Vector2.new(1, 0);
@@ -4380,6 +4676,7 @@ do
         Parent = Library.RightNotificationArea;
     });
 
+
     local WatermarkOuter = Library:Create('Frame', {
         BorderColor3 = Color3.new(0, 0, 0);
         Position = UDim2.new(0, 100, 0, -25);
@@ -4390,7 +4687,7 @@ do
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = WatermarkOuter;
     });
 
@@ -4404,7 +4701,7 @@ do
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = WatermarkInner;
     });
 
@@ -4422,7 +4719,7 @@ do
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = InnerFrame;
     });
 
@@ -4469,7 +4766,7 @@ do
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = KeybindOuter;
     });
 
@@ -4483,7 +4780,7 @@ do
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = KeybindInner;
     });
 
@@ -4507,7 +4804,8 @@ do
     local KeybindLabel = Library:CreateLabel({
         Size = UDim2.new(1, 0, 0, 20);
         Position = UDim2.fromOffset(5, 2),
-        TextXAlignment = Enum.TextXAlignment.Left;
+        TextXAlignment = Enum.TextXAlignment.Left,
+
         Text = 'Keybinds';
         RichText = true;
         ZIndex = 104;
@@ -4547,6 +4845,7 @@ function Library:SetWatermark(Text)
     local X, Y = Library:GetTextBounds(Text, Library.Font, 14);
     Library.Watermark.Size = UDim2.new(0, X + 15, 0, (Y * 1.5) + 3);
     Library:SetWatermarkVisibility(true)
+
     Library.WatermarkText.Text = Text;
 end;
 
@@ -4583,7 +4882,7 @@ function Library:Notify(...)
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = NotifyOuter;
     });
 
@@ -4597,7 +4896,7 @@ function Library:Notify(...)
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = NotifyInner;
     });
 
@@ -4616,7 +4915,7 @@ function Library:Notify(...)
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = InnerFrame;
     });
 
@@ -4661,28 +4960,33 @@ function Library:Notify(...)
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 10);
+        CornerRadius = UDim.new(0, 8);
         Parent = SideColor;
     });
 
     function Data:Resize()
         XSize, YSize = Library:GetTextBounds(NotifyLabel.Text, Library.Font, 14);
         YSize = YSize + 7
+    
         pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, XSize * DPIScale + 8 + 4, 0, YSize), 'Out', 'Quad', 0.4, true);
     end
 
     function Data:ChangeTitle(NewText)
         NewText = if NewText == nil then "" else tostring(NewText);
+
         Data.Title = NewText;
         NotifyLabel.Text = (if Data.Title == "" then "" else "[" .. Data.Title .. "] ") .. tostring(Data.Description);
+
         Data:Resize();
     end
 
     function Data:ChangeDescription(NewText)
         if NewText == nil then return end
         NewText = tostring(NewText);
+
         Data.Description = NewText;
         NotifyLabel.Text = (if Data.Title == "" then "" else "[" .. Data.Title .. "] ") .. tostring(Data.Description);
+
         Data:Resize();
     end
 
@@ -4712,6 +5016,7 @@ function Library:Notify(...)
         else
             task.wait(Data.Time or 5);
         end
+
         pcall(NotifyOuter.TweenSize, NotifyOuter, UDim2.new(0, 0, 0, YSize), 'Out', 'Quad', 0.4, true);
         task.wait(0.4);
         NotifyOuter:Destroy();
@@ -4720,7 +5025,7 @@ function Library:Notify(...)
     return Data
 end
 
--- MODIFIED: New left sidebar layout
+-- MODIFIED: Complete UI redesign with bottom-centered tabs and modern styling
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
@@ -4733,7 +5038,7 @@ function Library:CreateWindow(...)
     end
 
     if typeof(Config.Title) ~= "string" then Config.Title = 'No title' end
-    if typeof(Config.TabPadding) ~= 'number' then Config.TabPadding = 8 end
+    if typeof(Config.TabPadding) ~= 'number' then Config.TabPadding = 15 end
     if typeof(Config.MenuFadeTime) ~= 'number' then Config.MenuFadeTime = 0.2 end
     if typeof(Config.NotifySide) ~= "string" then Library.NotifySide = 'Left' else Library.NotifySide = Config.NotifySide end
     if typeof(Config.ShowCustomCursor) ~= 'boolean' then Library.ShowCustomCursor = true else Library.ShowCustomCursor = Config.ShowCustomCursor end
@@ -4744,12 +5049,12 @@ function Library:CreateWindow(...)
             local ViewportSizeYOffset = tonumber(workspace.CurrentCamera.ViewportSize.Y) - 35;
             Config.Size = UDim2.fromOffset(550 * 0.88, math.clamp(ViewportSizeYOffset, 200 * 0.88, 600 * 0.88))
         else
-            Config.Size = UDim2.fromOffset(900, 600) -- Wider to accommodate sidebar
+            Config.Size = UDim2.fromOffset(620, 550)
         end
     end
 
     if Config.TabPadding <= 0 then
-        Config.TabPadding = 1
+        Config.TabPadding = 15
     end
 
     if Config.Center then
@@ -4758,6 +5063,7 @@ function Library:CreateWindow(...)
 
     local Window = {
         Tabs = {};
+
         OriginalTitle = Config.Title; Title = Config.Title;
     };
 
@@ -4804,58 +5110,103 @@ function Library:CreateWindow(...)
         BorderColor3 = 'AccentColor';
     });
 
+    local TopBar = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, 0, 0, 45);
+        ZIndex = 2;
+        Parent = Inner;
+    });
+
     local WindowLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 15, 0, 10);
+        Position = UDim2.new(0, 15, 0, 12);
         Size = UDim2.new(0, 0, 0, 22);
         Text = Config.Title or '';
         TextSize = 18;
         TextXAlignment = Enum.TextXAlignment.Left;
         RichText = true;
-        ZIndex = 1;
-        Parent = Inner;
+        ZIndex = 2;
+        Parent = TopBar;
     });
 
-    -- Left sidebar for tabs
-    local Sidebar = Library:Create('Frame', {
+    local CloseButton = Library:Create('TextButton', {
+        AnchorPoint = Vector2.new(1, 0);
+        Position = UDim2.new(1, -12, 0, 12);
+        Size = UDim2.new(0, 24, 0, 24);
+        BackgroundColor3 = Library.MainColor;
+        BorderColor3 = Library.OutlineColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Text = '✕';
+        TextColor3 = Library.FontColor;
+        TextSize = 14;
+        Font = Library.Font;
+        ZIndex = 2;
+        Parent = TopBar;
+    });
+
+    Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 6);
+        Parent = CloseButton;
+    });
+
+    Library:AddToRegistry(CloseButton, {
+        BackgroundColor3 = 'MainColor';
+        BorderColor3 = 'OutlineColor';
+        TextColor3 = 'FontColor';
+    });
+
+    Library:OnHighlight(CloseButton, CloseButton,
+        { BackgroundColor3 = 'AccentColor', TextColor3 = 'MainColor' },
+        { BackgroundColor3 = 'MainColor', TextColor3 = 'FontColor' }
+    );
+
+    CloseButton.MouseButton1Click:Connect(function()
+        Library:Toggle()
+    end);
+
+    local MainSectionOuter = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Library.OutlineColor;
-        Position = UDim2.new(0, 8, 0, 40);
-        Size = UDim2.new(0, 160, 1, -48);
-        ZIndex = 2;
+        Position = UDim2.new(0, 8, 0, 50);
+        Size = UDim2.new(1, -16, 1, -58);
+        ZIndex = 1;
         Parent = Inner;
     });
 
     Library:Create('UICorner', {
         CornerRadius = UDim.new(0, 12);
-        Parent = Sidebar;
+        Parent = MainSectionOuter;
     });
 
-    Library:AddToRegistry(Sidebar, {
+    Library:AddToRegistry(MainSectionOuter, {
         BackgroundColor3 = 'BackgroundColor';
         BorderColor3 = 'OutlineColor';
     });
 
-    local TabListLayout = Library:Create('UIListLayout', {
-        Padding = UDim.new(0, 4);
-        FillDirection = Enum.FillDirection.Vertical;
-        SortOrder = Enum.SortOrder.LayoutOrder;
-        HorizontalAlignment = Enum.HorizontalAlignment.Center;
-        Parent = Sidebar;
+    local MainSectionInner = Library:Create('Frame', {
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Color3.new(0, 0, 0);
+        BorderMode = Enum.BorderMode.Inset;
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 1, 0);
+        ZIndex = 1;
+        Parent = MainSectionOuter;
     });
 
-    Library:Create('UIPadding', {
-        PaddingTop = UDim.new(0, 8);
-        PaddingBottom = UDim.new(0, 8);
-        Parent = Sidebar;
+    Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 12);
+        Parent = MainSectionInner;
     });
 
-    -- Main content area to the right of sidebar
+    Library:AddToRegistry(MainSectionInner, {
+        BackgroundColor3 = 'BackgroundColor';
+    });
+
     local ContentArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
-        Position = UDim2.new(0, 176, 0, 40);
-        Size = UDim2.new(1, -184, 1, -48);
+        Position = UDim2.new(0, 8, 0, 8);
+        Size = UDim2.new(1, -16, 1, -50);
         ZIndex = 2;
-        Parent = Inner;
+        Parent = MainSectionInner;
     });
 
     local TabContentContainer = Library:Create('Frame', {
@@ -4867,13 +5218,38 @@ function Library:CreateWindow(...)
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 12);
+        CornerRadius = UDim.new(0, 10);
         Parent = TabContentContainer;
     });
 
     Library:AddToRegistry(TabContentContainer, {
         BackgroundColor3 = 'MainColor';
         BorderColor3 = 'OutlineColor';
+    });
+
+    local TabBar = Library:Create('Frame', {
+        BackgroundColor3 = Library.BackgroundColor;
+        Position = UDim2.new(0, 0, 1, -42);
+        Size = UDim2.new(1, 0, 0, 42);
+        ZIndex = 3;
+        Parent = MainSectionInner;
+    });
+
+    local TabBarInner = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 10, 0, 4);
+        Size = UDim2.new(1, -20, 1, -8);
+        ZIndex = 3;
+        Parent = TabBar;
+    });
+
+    local TabListLayout = Library:Create('UIListLayout', {
+        Padding = UDim.new(0, Config.TabPadding);
+        FillDirection = Enum.FillDirection.Horizontal;
+        SortOrder = Enum.SortOrder.LayoutOrder;
+        HorizontalAlignment = Enum.HorizontalAlignment.Center;
+        VerticalAlignment = Enum.VerticalAlignment.Center;
+        Parent = TabBarInner;
     });
 
     local InnerVideoBackground = Library:Create('VideoFrame', {
@@ -4890,7 +5266,7 @@ function Library:CreateWindow(...)
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 12);
+        CornerRadius = UDim.new(0, 10);
         Parent = InnerVideoBackground;
     });
 
@@ -4903,7 +5279,6 @@ function Library:CreateWindow(...)
         end
     end;
 
-    -- Modified AddTab for sidebar
     function Window:AddTab(Name)
         local Tab = {
             Groupboxes = {};
@@ -4911,12 +5286,14 @@ function Library:CreateWindow(...)
             OriginalName = Name; Name = Name;
         };
 
+        local TabButtonWidth = Library:GetTextBounds(Tab.Name, Library.Font, 15) + 24;
+        
         local TabButton = Library:Create('Frame', {
             BackgroundColor3 = Library.BackgroundColor;
             BorderColor3 = Library.OutlineColor;
-            Size = UDim2.new(0, 144, 0, 36);
-            ZIndex = 3;
-            Parent = Sidebar;
+            Size = UDim2.new(0, TabButtonWidth, 0, 32);
+            ZIndex = 4;
+            Parent = TabBarInner;
         });
 
         Library:Create('UICorner', {
@@ -4930,37 +5307,35 @@ function Library:CreateWindow(...)
         });
 
         local TabButtonLabel = Library:CreateLabel({
-            Position = UDim2.new(0, 8, 0, 8);
-            Size = UDim2.new(1, -16, 1, -16);
+            Position = UDim2.new(0, 8, 0, 6);
+            Size = UDim2.new(1, -16, 1, -12);
             Text = Tab.Name;
             TextSize = 15;
             TextWrapped = false;
-            TextXAlignment = Enum.TextXAlignment.Left;
             RichText = true;
-            ZIndex = 4;
+            ZIndex = 5;
             Parent = TabButton;
         });
 
         local ActiveIndicator = Library:Create('Frame', {
             BackgroundColor3 = Library.AccentColor;
             BorderSizePixel = 0;
-            Position = UDim2.new(0, 0, 0, 0);
-            Size = UDim2.new(0, 3, 1, 0);
+            Position = UDim2.new(0, 0, 1, -2);
+            Size = UDim2.new(1, 0, 0, 2);
+            BackgroundTransparency = 1;
             ZIndex = 5;
-            Visible = false;
             Parent = TabButton;
-        });
-
-        Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 2);
-            Parent = ActiveIndicator;
         });
 
         Library:AddToRegistry(ActiveIndicator, {
             BackgroundColor3 = 'AccentColor';
         });
 
-        -- Tab content frame
+        Library:OnHighlight(TabButton, TabButton,
+            { BorderColor3 = 'AccentColor' },
+            { BorderColor3 = 'OutlineColor' }
+        );
+
         local TabFrame = Library:Create('Frame', {
             Name = 'TabFrame',
             BackgroundTransparency = 1;
@@ -4971,7 +5346,6 @@ function Library:CreateWindow(...)
             Parent = TabContentContainer;
         });
 
-        -- Top warning bar
         local TopBar, TopBarInner, TopBarLabel, TopBarTextLabel, TopBarLabelStroke, TopBarHighlight; 
         do
             TopBar = Library:Create('Frame', {
@@ -4986,7 +5360,7 @@ function Library:CreateWindow(...)
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 8);
+                CornerRadius = UDim.new(0, 6);
                 Parent = TopBar;
             });
 
@@ -5000,7 +5374,7 @@ function Library:CreateWindow(...)
             });
 
             Library:Create('UICorner', {
-                CornerRadius = UDim.new(0, 8);
+                CornerRadius = UDim.new(0, 6);
                 Parent = TopBarInner;
             });
 
@@ -5035,7 +5409,7 @@ function Library:CreateWindow(...)
                 Size = UDim2.new(1, -4, 0, 14);
                 TextSize = 14;
                 Text = "Text";
-                TextWrapped = true;
+                TextWrapped = true,
                 TextXAlignment = Enum.TextXAlignment.Left;
                 TextYAlignment = Enum.TextYAlignment.Top;
                 RichText = true;
@@ -5052,7 +5426,6 @@ function Library:CreateWindow(...)
             });
         end
         
-        -- Left and right content sides (two columns)
         local LeftSide = Library:Create('ScrollingFrame', {
             BackgroundTransparency = 1;
             BorderSizePixel = 0;
@@ -5100,6 +5473,7 @@ function Library:CreateWindow(...)
                 ["Left"] = tick(),
                 ["Right"] = tick(),
             }
+
             LeftSide:GetPropertyChangedSignal('CanvasPosition'):Connect(function()
                 Library.CanDrag = false;
                 local ChangeTick = tick();
@@ -5109,6 +5483,7 @@ function Library:CreateWindow(...)
                     Library.CanDrag = true;
                 end
             end);
+
             RightSide:GetPropertyChangedSignal('CanvasPosition'):Connect(function()
                 Library.CanDrag = false;
                 local ChangeTick = tick();
@@ -5138,15 +5513,19 @@ function Library:CreateWindow(...)
                         Size = Size + Element.Size.Y.Offset;
                     end;
                 end;
+                
                 TopBar.Size = UDim2.new(1, -13, 0, Size);
                 Size = Size + 10;
+                
                 LeftSide.Position = UDim2.new(0, 8 - 1, 0, 8 - 1 + Size);
                 LeftSide.Size = UDim2.new(0.5, -12 + 2, 1, -14 - Size);
+        
                 RightSide.Position = UDim2.new(0.5, 4 + 1, 0, 8 - 1 + Size);
                 RightSide.Size = UDim2.new(0.5, -12 + 2, 1, -14 - Size);
             else
                 LeftSide.Position = UDim2.new(0, 8 - 1, 0, 8 - 1);
                 LeftSide.Size = UDim2.new(0.5, -12 + 2, 1, -14);
+        
                 RightSide.Position = UDim2.new(0.5, 4 + 1, 0, 8 - 1);
                 RightSide.Size = UDim2.new(0.5, -12 + 2, 1, -14);
             end;
@@ -5157,19 +5536,23 @@ function Library:CreateWindow(...)
                 TopBar.Visible = Info.Visible;
                 Tab:Resize();
             end;
+
             if typeof(Info.Title) == "string" then
                 TopBarLabel.Text = Info.Title;
             end;
+
             if typeof(Info.Text) == "string" then
                 TopBarTextLabel.Text = Info.Text;
                 local Y = select(2, Library:GetTextBounds(Info.Text, Library.Font, 14, Vector2.new(TopBarTextLabel.AbsoluteSize.X, math.huge)));
                 TopBarTextLabel.Size = UDim2.new(1, -4, 0, Y);
                 Tab:Resize();
             end;
+
             TopBar.BorderColor3 = Info.IsNormal == true and Color3.fromRGB(27, 42, 53) or Color3.fromRGB(248, 51, 51)
             TopBarInner.BorderColor3 = Info.IsNormal == true and Library.OutlineColor or Color3.fromRGB(0, 0, 0)
             TopBarInner.BackgroundColor3 = Info.IsNormal == true and Library.BackgroundColor or Color3.fromRGB(117, 22, 17)
             TopBarHighlight.BackgroundColor3 = Info.IsNormal == true and Library.AccentColor or Color3.fromRGB(255, 75, 75)
+             
             TopBarLabel.TextColor3 = Info.IsNormal == true and Library.FontColor or Color3.fromRGB(255, 55, 55)
             TopBarLabelStroke.Color = Info.IsNormal == true and Library.Black or Color3.fromRGB(174, 3, 3)
 
@@ -5190,15 +5573,17 @@ function Library:CreateWindow(...)
             for _, Tab in next, Window.Tabs do
                 Tab:HideTab();
             end;
-            ActiveIndicator.Visible = true;
+
+            ActiveIndicator.BackgroundTransparency = 0;
             TabButton.BackgroundColor3 = Library.MainColor;
             Library.RegistryMap[TabButton].Properties.BackgroundColor3 = 'MainColor';
             TabFrame.Visible = true;
+
             Tab:Resize();
         end;
 
         function Tab:HideTab()
-            ActiveIndicator.Visible = false;
+            ActiveIndicator.BackgroundTransparency = 1;
             TabButton.BackgroundColor3 = Library.BackgroundColor;
             Library.RegistryMap[TabButton].Properties.BackgroundColor3 = 'BackgroundColor';
             TabFrame.Visible = false;
@@ -5216,6 +5601,8 @@ function Library:CreateWindow(...)
         function Tab:SetName(Name)
             if typeof(Name) == "string" then
                 Tab.Name = Name;
+                local TabButtonWidth = Library:GetTextBounds(Tab.Name, Library.Font, 15) + 24;
+                TabButton.Size = UDim2.new(0, TabButtonWidth, 0, 32);
                 TabButtonLabel.Text = Tab.Name;
             end
         end;
@@ -5273,8 +5660,8 @@ function Library:CreateWindow(...)
             });
 
             local GroupboxLabel = Library:CreateLabel({
-                Size = UDim2.new(1, 0, 0, 18);
-                Position = UDim2.new(0, 8, 0, 2);
+                Size = UDim2.new(1, 0, 0, 20);
+                Position = UDim2.new(0, 8, 0, 4);
                 TextSize = 15;
                 Text = Info.Name;
                 TextXAlignment = Enum.TextXAlignment.Left;
@@ -5285,8 +5672,8 @@ function Library:CreateWindow(...)
 
             local Container = Library:Create('Frame', {
                 BackgroundTransparency = 1;
-                Position = UDim2.new(0, 8, 0, 24);
-                Size = UDim2.new(1, -16, 1, -24);
+                Position = UDim2.new(0, 8, 0, 28);
+                Size = UDim2.new(1, -16, 1, -32);
                 ZIndex = 1;
                 Parent = BoxInner;
             });
@@ -5304,7 +5691,7 @@ function Library:CreateWindow(...)
                         Size = Size + Element.Size.Y.Offset;
                     end;
                 end;
-                BoxOuter.Size = UDim2.new(1, 0, 0, (24 * DPIScale + Size) + 4 + 2);
+                BoxOuter.Size = UDim2.new(1, 0, 0, (28 + Size) + 2 + 2);
             end;
 
             Groupbox.Container = Container;
@@ -5314,6 +5701,7 @@ function Library:CreateWindow(...)
             Groupbox:Resize();
 
             Tab.Groupboxes[Info.Name] = Groupbox;
+
             return Groupbox;
         end;
 
@@ -5382,7 +5770,7 @@ function Library:CreateWindow(...)
             local TabboxButtons = Library:Create('Frame', {
                 BackgroundTransparency = 1;
                 Position = UDim2.new(0, 0, 0, 1);
-                Size = UDim2.new(1, 0, 0, 24);
+                Size = UDim2.new(1, 0, 0, 20);
                 ZIndex = 5;
                 Parent = BoxInner;
             });
@@ -5440,8 +5828,8 @@ function Library:CreateWindow(...)
 
                 local Container = Library:Create('Frame', {
                     BackgroundTransparency = 1;
-                    Position = UDim2.new(0, 8, 0, 26);
-                    Size = UDim2.new(1, -16, 1, -26);
+                    Position = UDim2.new(0, 8, 0, 24);
+                    Size = UDim2.new(1, -16, 1, -28);
                     ZIndex = 1;
                     Visible = false;
                     Parent = BoxInner;
@@ -5457,6 +5845,7 @@ function Library:CreateWindow(...)
                     for _, Tab in next, Tabbox.Tabs do
                         Tab:Hide();
                     end;
+
                     Container.Visible = true;
                     Block.Visible = true;
                     Button.BackgroundColor3 = Library.BackgroundColor;
@@ -5476,21 +5865,24 @@ function Library:CreateWindow(...)
                     for _, Tab in next, Tabbox.Tabs do
                         TabCount = TabCount + 1;
                     end;
+
                     for _, Button in next, TabboxButtons:GetChildren() do
                         if not Button:IsA('UIListLayout') then
                             Button.Size = UDim2.new(1 / TabCount, 0, 1, 0);
                         end;
                     end;
+
                     if (not Container.Visible) then
                         return;
                     end;
+
                     local Size = 0;
                     for _, Element in next, Tab.Container:GetChildren() do
                         if (not Element:IsA('UIListLayout')) and Element.Visible then
                             Size = Size + Element.Size.Y.Offset;
                         end;
                     end;
-                    BoxOuter.Size = UDim2.new(1, 0, 0, (26 * DPIScale + Size) + 4 + 2);
+                    BoxOuter.Size = UDim2.new(1, 0, 0, (24 + Size) + 2 + 2);
                 end;
 
                 Button.InputBegan:Connect(function(Input)
@@ -5502,16 +5894,21 @@ function Library:CreateWindow(...)
 
                 Tab.Container = Container;
                 Tabbox.Tabs[Name] = Tab;
+
                 setmetatable(Tab, BaseGroupbox);
+
                 Tab:AddBlank(3);
                 Tab:Resize();
+
                 if #TabboxButtons:GetChildren() == 2 then
                     Tab:Show();
                 end;
+
                 return Tab;
             end;
 
             Tab.Tabboxes[Info.Name or ''] = Tabbox;
+
             return Tabbox;
         end;
 
@@ -5673,7 +6070,7 @@ function Library:CreateWindow(...)
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 10);
+            CornerRadius = UDim.new(0, 8);
             Parent = ToggleUIOuter;
         });
     
@@ -5687,7 +6084,7 @@ function Library:CreateWindow(...)
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 10);
+            CornerRadius = UDim.new(0, 8);
             Parent = ToggleUIInner;
         });
     
@@ -5705,7 +6102,7 @@ function Library:CreateWindow(...)
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 10);
+            CornerRadius = UDim.new(0, 8);
             Parent = ToggleUIInnerFrame;
         });
     
@@ -5758,7 +6155,7 @@ function Library:CreateWindow(...)
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 10);
+            CornerRadius = UDim.new(0, 8);
             Parent = LockUIOuter;
         });
     
@@ -5772,7 +6169,7 @@ function Library:CreateWindow(...)
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 10);
+            CornerRadius = UDim.new(0, 8);
             Parent = LockUIInner;
         });
     
@@ -5790,7 +6187,7 @@ function Library:CreateWindow(...)
         });
 
         Library:Create('UICorner', {
-            CornerRadius = UDim.new(0, 10);
+            CornerRadius = UDim.new(0, 8);
             Parent = LockUIInnerFrame;
         });
     
@@ -5838,6 +6235,7 @@ function Library:CreateWindow(...)
     if Config.AutoShow then task.spawn(Library.Toggle) end
 
     Window.Holder = Outer;
+
     Library.Window = Window;
     return Window;
 end;
