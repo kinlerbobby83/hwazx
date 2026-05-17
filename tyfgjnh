@@ -82,15 +82,15 @@ local Library = {
 
     HudRegistry = {};
 
-    -- Glass-themed colors with transparency support
+    -- Enhanced glass color palette with higher transparency
     FontColor = Color3.fromRGB(255, 255, 255);
-    MainColor = Color3.fromRGB(20, 25, 35);           -- Dark glass base
-    BackgroundColor = Color3.fromRGB(30, 35, 45);     -- Slightly lighter for contrast
-    AccentColor = Color3.fromRGB(0, 200, 255);        -- Neon cyan accent
-    DisabledAccentColor = Color3.fromRGB(100, 110, 130);
-    OutlineColor = Color3.fromRGB(55, 65, 80);
-    DisabledOutlineColor = Color3.fromRGB(80, 90, 105);
-    DisabledTextColor = Color3.fromRGB(150, 160, 180);
+    MainColor = Color3.fromRGB(15, 18, 25);           -- Deep dark base for glass
+    BackgroundColor = Color3.fromRGB(25, 30, 40);     -- Slightly lighter for content areas
+    AccentColor = Color3.fromRGB(0, 200, 255);        -- Brighter cyan glass accent
+    DisabledAccentColor = Color3.fromRGB(90, 100, 120);
+    OutlineColor = Color3.fromRGB(80, 100, 140);
+    DisabledOutlineColor = Color3.fromRGB(60, 70, 90);
+    DisabledTextColor = Color3.fromRGB(140, 145, 165);
     RiskColor = Color3.fromRGB(255, 70, 90);
     Black = Color3.new(0, 0, 0);
     Font = Enum.Font.Gotham,
@@ -2038,7 +2038,7 @@ function Library:Notify(...)
     return Data
 end
 
--- COMPLETELY NEW DESIGN: Glass effect with 0.85 transparency on window, tabs at bottom
+-- Enhanced glass window with improved transparency and blur effects
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
@@ -2063,11 +2063,11 @@ function Library:CreateWindow(...)
 
     local Window = { Tabs = {}; OriginalTitle = Config.Title; Title = Config.Title; };
 
-    -- Main window frame with glass transparency (0.85)
+    -- Enhanced glass outer frame with blur effect simulation
     local Outer = Library:Create('Frame', { 
         AnchorPoint = Config.AnchorPoint; 
-        BackgroundColor3 = Color3.new(0, 0, 0); 
-        BackgroundTransparency = 0.15;  -- 85% opaque glass
+        BackgroundColor3 = Color3.new(20, 22, 30); 
+        BackgroundTransparency = 0.15;  -- Enhanced transparency for glass look
         BorderSizePixel = 0; 
         Position = Config.Position; 
         Size = Config.Size; 
@@ -2083,7 +2083,7 @@ function Library:CreateWindow(...)
     -- Glass inner panel with accent border
     local Inner = Library:Create('Frame', { 
         BackgroundColor3 = Library.MainColor; 
-        BackgroundTransparency = 0.1;   -- glass effect
+        BackgroundTransparency = 0.12;   -- More transparent glass
         BorderColor3 = Library.AccentColor; 
         BorderMode = Enum.BorderMode.Inset; 
         Position = UDim2.new(0, 1, 0, 1); 
@@ -2094,7 +2094,19 @@ function Library:CreateWindow(...)
     Library:Create('UICorner', { CornerRadius = UDim.new(0, 16); Parent = Inner; });
     Library:AddToRegistry(Inner, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'AccentColor'; });
 
-    -- Title bar
+    -- Glass reflection overlay (subtle gradient)
+    local GlassReflection = Library:Create('Frame', {
+        BackgroundColor3 = Color3.new(255, 255, 255);
+        BackgroundTransparency = 0.03;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 0.4, 0);
+        ZIndex = 2;
+        Parent = Inner;
+    });
+    Library:Create('UICorner', { CornerRadius = UDim.new(0, 16); Parent = GlassReflection; });
+
+    -- Title bar with glass effect
     local WindowLabel = Library:CreateLabel({ 
         Position = UDim2.new(0, 12, 0, 10); 
         Size = UDim2.new(0, 0, 0, 22); 
@@ -2102,11 +2114,11 @@ function Library:CreateWindow(...)
         TextSize = 18; 
         TextXAlignment = Enum.TextXAlignment.Left; 
         RichText = true; 
-        ZIndex = 1; 
+        ZIndex = 3; 
         Parent = Inner; 
     });
 
-    -- Main content area with glass background
+    -- Content area with semi-transparent glass
     local ContentArea = Library:Create('Frame', { 
         BackgroundTransparency = 1; 
         Position = UDim2.new(0, 8, 0, 40); 
@@ -2114,37 +2126,17 @@ function Library:CreateWindow(...)
         ZIndex = 2; 
         Parent = Inner; 
     });
-    -- Tab content container with frosted glass
     local TabContentContainer = Library:Create('Frame', { 
         BackgroundColor3 = Library.BackgroundColor; 
-        BackgroundTransparency = 0.2;   -- glass effect
-        BorderColor3 = Library.OutlineColor; 
+        BackgroundTransparency = 0.25;   -- Frosted glass effect
+        BorderColor3 = Library.AccentColor; 
+        BorderSizePixel = 1;
         Size = UDim2.new(1, 0, 1, 0); 
         ZIndex = 2; 
         Parent = ContentArea; 
     });
     Library:Create('UICorner', { CornerRadius = UDim.new(0, 12); Parent = TabContentContainer; });
-    Library:AddToRegistry(TabContentContainer, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
-
-    -- White gradient overlay for glass reflection
-    local GlassReflection = Library:Create('Frame', {
-        BackgroundColor3 = Color3.new(1, 1, 1);
-        BackgroundTransparency = 0.95;
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0.5, 0);
-        Position = UDim2.new(0, 0, 0, 0);
-        ZIndex = 3;
-        Parent = TabContentContainer;
-    });
-    Library:Create('UICorner', { CornerRadius = UDim.new(0, 12); Parent = GlassReflection; });
-    local ReflectionGradient = Library:Create('UIGradient', {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1));
-            ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1, 0));
-        });
-        Rotation = 90;
-        Parent = GlassReflection;
-    });
+    Library:AddToRegistry(TabContentContainer, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'AccentColor'; });
 
     -- Optional video background
     local InnerVideoBackground = Library:Create('VideoFrame', { 
@@ -2162,13 +2154,24 @@ function Library:CreateWindow(...)
     Library:Create('UICorner', { CornerRadius = UDim.new(0, 12); Parent = InnerVideoBackground; });
     Library.InnerVideoBackground = InnerVideoBackground;
 
-    -- Tab bar at the BOTTOM with glass tabs
+    -- Glass tab bar at the bottom with frosted pill design
     local TabBar = Library:Create('Frame', { 
-        BackgroundTransparency = 1; 
-        Position = UDim2.new(0, 0, 1, -40); 
-        Size = UDim2.new(1, 0, 0, 40); 
+        BackgroundTransparency = 0.2;
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 1, -44); 
+        Size = UDim2.new(1, 0, 0, 44); 
         ZIndex = 3; 
         Parent = Inner; 
+    });
+    -- Add blur effect background for tab bar
+    local TabBarGlass = Library:Create('Frame', {
+        BackgroundColor3 = Color3.new(255, 255, 255);
+        BackgroundTransparency = 0.95;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 1, 0);
+        ZIndex = 1;
+        Parent = TabBar;
     });
     local TabLayout = Library:Create('UIListLayout', { 
         Padding = UDim.new(0, 8); 
@@ -2177,26 +2180,26 @@ function Library:CreateWindow(...)
         SortOrder = Enum.SortOrder.LayoutOrder; 
         Parent = TabBar; 
     });
-    Library:Create('UIPadding', { PaddingTop = UDim.new(0, 6); PaddingBottom = UDim.new(0, 6); Parent = TabBar; });
+    Library:Create('UIPadding', { PaddingTop = UDim.new(0, 8); PaddingBottom = UDim.new(0, 8); Parent = TabBar; });
 
     function Window:SetWindowTitle(Title) if typeof(Title) == "string" then Window.Title = Title; WindowLabel.Text = Window.Title; end end;
 
     function Window:AddTab(Name)
         local Tab = { Groupboxes = {}; Tabboxes = {}; OriginalName = Name; Name = Name; };
-        -- Glass tab button with hover effect
+        -- Modern glass tab button
         local TabButton = Library:Create('Frame', { 
             BackgroundColor3 = Library.BackgroundColor; 
             BackgroundTransparency = 0.7;
             BorderSizePixel = 0;
-            Size = UDim2.new(0, 0, 0, 28); 
+            Size = UDim2.new(0, 0, 0, 30); 
             ZIndex = 4; 
             Parent = TabBar; 
         });
-        Library:Create('UICorner', { CornerRadius = UDim.new(0, 14); Parent = TabButton; });
+        Library:Create('UICorner', { CornerRadius = UDim.new(0, 15); Parent = TabButton; });
         Library:AddToRegistry(TabButton, { BackgroundColor3 = 'BackgroundColor' });
         local TabButtonLabel = Library:CreateLabel({ 
-            Size = UDim2.new(1, -8, 1, 0); 
-            Position = UDim2.new(0, 4, 0, 0); 
+            Size = UDim2.new(1, -12, 1, 0); 
+            Position = UDim2.new(0, 6, 0, 0); 
             Text = Tab.Name; 
             TextSize = 15; 
             TextXAlignment = Enum.TextXAlignment.Center; 
@@ -2204,34 +2207,36 @@ function Library:CreateWindow(...)
             ZIndex = 5; 
             Parent = TabButton; 
         });
-        -- Glowing accent underline
+        -- Glowing accent line for active tab
         local ActiveLine = Library:Create('Frame', { 
             BackgroundColor3 = Library.AccentColor; 
             BorderSizePixel = 0; 
-            Position = UDim2.new(0, 0, 1, -2); 
-            Size = UDim2.new(1, 0, 0, 2); 
+            Position = UDim2.new(0.1, 0, 1, -2); 
+            Size = UDim2.new(0.8, 0, 0, 2); 
             ZIndex = 6; 
             Visible = false; 
             Parent = TabButton; 
         });
         Library:Create('UICorner', { CornerRadius = UDim.new(0, 2); Parent = ActiveLine; });
         Library:AddToRegistry(ActiveLine, { BackgroundColor3 = 'AccentColor'; });
-        -- Hover background
+        -- Hover glass effect
         local HoverBg = Library:Create('Frame', { 
             BackgroundColor3 = Library.AccentColor; 
-            BackgroundTransparency = 0.85; 
+            BackgroundTransparency = 0.9; 
             BorderSizePixel = 0; 
             Size = UDim2.new(1, 0, 1, 0); 
             ZIndex = 3; 
             Visible = false; 
             Parent = TabButton; 
         });
-        Library:Create('UICorner', { CornerRadius = UDim.new(0, 14); Parent = HoverBg; });
+        Library:Create('UICorner', { CornerRadius = UDim.new(0, 15); Parent = HoverBg; });
         Library:AddToRegistry(HoverBg, { BackgroundColor3 = 'AccentColor'; });
 
-        local textWidth = Library:GetTextBounds(Name, Library.Font, 15) + 24;
-        TabButton.Size = UDim2.new(0, textWidth, 0, 28);
+        -- Adjust button width based on text
+        local textWidth = Library:GetTextBounds(Name, Library.Font, 15) + 32;
+        TabButton.Size = UDim2.new(0, textWidth, 0, 30);
 
+        -- Tab content frame
         local TabFrame = Library:Create('Frame', { 
             Name = 'TabFrame'; 
             BackgroundTransparency = 1; 
@@ -2242,12 +2247,12 @@ function Library:CreateWindow(...)
             Parent = TabContentContainer; 
         });
 
-        -- Warning bar (same functionality)
+        -- Warning bar with glass design
         local TopBar, TopBarInner, TopBarLabel, TopBarTextLabel, TopBarLabelStroke, TopBarHighlight; 
         do
             TopBar = Library:Create('Frame', { 
                 BackgroundColor3 = Library.BackgroundColor; 
-                BackgroundTransparency = 0.2;
+                BackgroundTransparency = 0.3;
                 BorderColor3 = Color3.fromRGB(248, 51, 51); 
                 BorderMode = Enum.BorderMode.Inset; 
                 Position = UDim2.new(0, 7, 0, 7); 
@@ -2303,9 +2308,9 @@ function Library:CreateWindow(...)
             Library:Create('Frame', { BackgroundTransparency = 1; Size = UDim2.new(1, 0, 0, 5); Visible = true; ZIndex = 1; Parent = TopBarInner; });
         end
 
-        -- Glass columns with 0.4 transparency for groupboxes (applied per groupbox, but columns themselves slightly transparent)
+        -- Glass panel columns
         local LeftSide = Library:Create('ScrollingFrame', { 
-            BackgroundTransparency = 0.05;
+            BackgroundTransparency = 0.08;
             BackgroundColor3 = Library.BackgroundColor;
             BorderSizePixel = 0; 
             Position = UDim2.new(0, 8 - 1, 0, 8 - 1); 
@@ -2313,12 +2318,13 @@ function Library:CreateWindow(...)
             CanvasSize = UDim2.new(0, 0, 0, 0); 
             BottomImage = ''; 
             TopImage = ''; 
-            ScrollBarThickness = 0; 
+            ScrollBarThickness = 4; 
+            ScrollBarImageColor3 = Library.AccentColor;
             ZIndex = 2; 
             Parent = TabFrame; 
         });
         local RightSide = Library:Create('ScrollingFrame', { 
-            BackgroundTransparency = 0.05;
+            BackgroundTransparency = 0.08;
             BackgroundColor3 = Library.BackgroundColor;
             BorderSizePixel = 0; 
             Position = UDim2.new(0.5, 4 + 1, 0, 8 - 1); 
@@ -2326,14 +2332,15 @@ function Library:CreateWindow(...)
             CanvasSize = UDim2.new(0, 0, 0, 0); 
             BottomImage = ''; 
             TopImage = ''; 
-            ScrollBarThickness = 0; 
+            ScrollBarThickness = 4; 
+            ScrollBarImageColor3 = Library.AccentColor;
             ZIndex = 2; 
             Parent = TabFrame; 
         });
-        Library:Create('UICorner', { CornerRadius = UDim.new(0, 8); Parent = LeftSide; });
-        Library:Create('UICorner', { CornerRadius = UDim.new(0, 8); Parent = RightSide; });
-        Library:AddToRegistry(LeftSide, { BackgroundColor3 = 'BackgroundColor' });
-        Library:AddToRegistry(RightSide, { BackgroundColor3 = 'BackgroundColor' });
+        Library:Create('UICorner', { CornerRadius = UDim.new(0, 10); Parent = LeftSide; });
+        Library:Create('UICorner', { CornerRadius = UDim.new(0, 10); Parent = RightSide; });
+        Library:AddToRegistry(LeftSide, { BackgroundColor3 = 'BackgroundColor'; ScrollBarImageColor3 = 'AccentColor' });
+        Library:AddToRegistry(RightSide, { BackgroundColor3 = 'BackgroundColor'; ScrollBarImageColor3 = 'AccentColor' });
 
         Library:Create('UIListLayout', { Padding = UDim.new(0, 8); FillDirection = Enum.FillDirection.Vertical; SortOrder = Enum.SortOrder.LayoutOrder; HorizontalAlignment = Enum.HorizontalAlignment.Center; Parent = LeftSide; });
         Library:Create('UIListLayout', { Padding = UDim.new(0, 8); FillDirection = Enum.FillDirection.Vertical; SortOrder = Enum.SortOrder.LayoutOrder; HorizontalAlignment = Enum.HorizontalAlignment.Center; Parent = RightSide; });
@@ -2416,32 +2423,32 @@ function Library:CreateWindow(...)
 
         function Tab:SetLayoutOrder(Position) TabButton.LayoutOrder = Position; TabLayout:ApplyLayout(); end
         function Tab:GetSides() return { Left = LeftSide, Right = RightSide }; end
-        function Tab:SetName(Name) if typeof(Name) == "string" then Tab.Name = Name; TabButtonLabel.Text = Tab.Name; local newWidth = Library:GetTextBounds(Name, Library.Font, 15) + 24; TabButton.Size = UDim2.new(0, newWidth, 0, 28); end end
+        function Tab:SetName(Name) if typeof(Name) == "string" then Tab.Name = Name; TabButtonLabel.Text = Tab.Name; local newWidth = Library:GetTextBounds(Name, Library.Font, 15) + 32; TabButton.Size = UDim2.new(0, newWidth, 0, 30); end end
 
         function Tab:AddGroupbox(Info)
             local Groupbox = {};
-            -- Glass groupbox with 0.4 transparency (0.6 opaque)
+            -- Glass groupbox container
             local BoxOuter = Library:Create('Frame', { 
                 BackgroundColor3 = Library.BackgroundColor; 
-                BackgroundTransparency = 0.4;   -- frosted glass
-                BorderColor3 = Library.OutlineColor; 
+                BackgroundTransparency = 0.25;   -- Frosted glass effect
+                BorderColor3 = Library.AccentColor; 
                 BorderMode = Enum.BorderMode.Inset; 
                 Size = UDim2.new(1, 0, 0, 507 + 2); 
                 ZIndex = 2; 
                 Parent = Info.Side == 1 and LeftSide or RightSide; 
             });
-            Library:Create('UICorner', { CornerRadius = UDim.new(0, 10); Parent = BoxOuter; });
-            Library:AddToRegistry(BoxOuter, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
+            Library:Create('UICorner', { CornerRadius = UDim.new(0, 12); Parent = BoxOuter; });
+            Library:AddToRegistry(BoxOuter, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'AccentColor'; });
             local BoxInner = Library:Create('Frame', { 
                 BackgroundColor3 = Library.BackgroundColor; 
-                BackgroundTransparency = 0.4;
+                BackgroundTransparency = 0.15;
                 BorderColor3 = Color3.new(0, 0, 0); 
                 Size = UDim2.new(1, -2, 1, -2); 
                 Position = UDim2.new(0, 1, 0, 1); 
                 ZIndex = 4; 
                 Parent = BoxOuter; 
             });
-            Library:Create('UICorner', { CornerRadius = UDim.new(0, 10); Parent = BoxInner; });
+            Library:Create('UICorner', { CornerRadius = UDim.new(0, 12); Parent = BoxInner; });
             Library:AddToRegistry(BoxInner, { BackgroundColor3 = 'BackgroundColor'; });
             local Highlight = Library:Create('Frame', { 
                 BackgroundColor3 = Library.AccentColor; 
@@ -2480,28 +2487,27 @@ function Library:CreateWindow(...)
 
         function Tab:AddTabbox(Info)
             local Tabbox = { Tabs = {}; };
-            -- Glass tabbox with 0.4 transparency
             local BoxOuter = Library:Create('Frame', { 
                 BackgroundColor3 = Library.BackgroundColor; 
-                BackgroundTransparency = 0.4;
-                BorderColor3 = Library.OutlineColor; 
+                BackgroundTransparency = 0.25;
+                BorderColor3 = Library.AccentColor; 
                 BorderMode = Enum.BorderMode.Inset; 
                 Size = UDim2.new(1, 0, 0, 0); 
                 ZIndex = 2; 
                 Parent = Info.Side == 1 and LeftSide or RightSide; 
             });
-            Library:Create('UICorner', { CornerRadius = UDim.new(0, 10); Parent = BoxOuter; });
-            Library:AddToRegistry(BoxOuter, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
+            Library:Create('UICorner', { CornerRadius = UDim.new(0, 12); Parent = BoxOuter; });
+            Library:AddToRegistry(BoxOuter, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'AccentColor'; });
             local BoxInner = Library:Create('Frame', { 
                 BackgroundColor3 = Library.BackgroundColor; 
-                BackgroundTransparency = 0.4;
+                BackgroundTransparency = 0.15;
                 BorderColor3 = Color3.new(0, 0, 0); 
                 Size = UDim2.new(1, -2, 1, -2); 
                 Position = UDim2.new(0, 1, 0, 1); 
                 ZIndex = 4; 
                 Parent = BoxOuter; 
             });
-            Library:Create('UICorner', { CornerRadius = UDim.new(0, 10); Parent = BoxInner; });
+            Library:Create('UICorner', { CornerRadius = UDim.new(0, 12); Parent = BoxInner; });
             Library:AddToRegistry(BoxInner, { BackgroundColor3 = 'BackgroundColor'; });
             local Highlight = Library:Create('Frame', { 
                 BackgroundColor3 = Library.AccentColor; 
@@ -2514,7 +2520,7 @@ function Library:CreateWindow(...)
             local TabboxButtons = Library:Create('Frame', { 
                 BackgroundTransparency = 1; 
                 Position = UDim2.new(0, 0, 0, 1); 
-                Size = UDim2.new(1, 0, 0, 24); 
+                Size = UDim2.new(1, 0, 0, 26); 
                 ZIndex = 5; 
                 Parent = BoxInner; 
             });
@@ -2523,13 +2529,14 @@ function Library:CreateWindow(...)
                 local Tab = {};
                 local Button = Library:Create('Frame', { 
                     BackgroundColor3 = Library.MainColor; 
-                    BorderColor3 = Color3.new(0, 0, 0); 
+                    BackgroundTransparency = 0.3;
+                    BorderColor3 = Library.AccentColor; 
                     Size = UDim2.new(0.5, 0, 1, 0); 
                     ZIndex = 6; 
                     Parent = TabboxButtons; 
                 });
-                Library:Create('UICorner', { CornerRadius = UDim.new(0, 6); Parent = Button; });
-                Library:AddToRegistry(Button, { BackgroundColor3 = 'MainColor'; });
+                Library:Create('UICorner', { CornerRadius = UDim.new(0, 8); Parent = Button; });
+                Library:AddToRegistry(Button, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'AccentColor'; });
                 local ButtonLabel = Library:CreateLabel({ 
                     Size = UDim2.new(1, 0, 1, 0); 
                     TextSize = 14; 
@@ -2551,16 +2558,16 @@ function Library:CreateWindow(...)
                 Library:AddToRegistry(Block, { BackgroundColor3 = 'BackgroundColor'; });
                 local Container = Library:Create('Frame', { 
                     BackgroundTransparency = 1; 
-                    Position = UDim2.new(0, 8, 0, 26); 
-                    Size = UDim2.new(1, -16, 1, -26); 
+                    Position = UDim2.new(0, 8, 0, 28); 
+                    Size = UDim2.new(1, -16, 1, -28); 
                     ZIndex = 1; 
                     Visible = false; 
                     Parent = BoxInner; 
                 });
                 Library:Create('UIListLayout', { FillDirection = Enum.FillDirection.Vertical; SortOrder = Enum.SortOrder.LayoutOrder; Parent = Container; });
-                function Tab:Show() for _, t in next, Tabbox.Tabs do t:Hide(); end; Container.Visible = true; Block.Visible = true; Button.BackgroundColor3 = Library.BackgroundColor; Library.RegistryMap[Button].Properties.BackgroundColor3 = 'BackgroundColor'; Tab:Resize(); end
-                function Tab:Hide() Container.Visible = false; Block.Visible = false; Button.BackgroundColor3 = Library.MainColor; Library.RegistryMap[Button].Properties.BackgroundColor3 = 'MainColor'; end
-                function Tab:Resize() local TabCount = 0; for _, t in next, Tabbox.Tabs do TabCount = TabCount + 1; end; for _, b in next, TabboxButtons:GetChildren() do if not b:IsA('UIListLayout') then b.Size = UDim2.new(1 / TabCount, 0, 1, 0); end; end; if (not Container.Visible) then return; end; local s = 0; for _, Element in next, Tab.Container:GetChildren() do if (not Element:IsA('UIListLayout')) and Element.Visible then s = s + Element.Size.Y.Offset; end; end; BoxOuter.Size = UDim2.new(1, 0, 0, (26 * DPIScale + s) + 4 + 2); end
+                function Tab:Show() for _, t in next, Tabbox.Tabs do t:Hide(); end; Container.Visible = true; Block.Visible = true; Button.BackgroundColor3 = Library.BackgroundColor; Button.BackgroundTransparency = 0.2; Library.RegistryMap[Button].Properties.BackgroundColor3 = 'BackgroundColor'; Tab:Resize(); end
+                function Tab:Hide() Container.Visible = false; Block.Visible = false; Button.BackgroundColor3 = Library.MainColor; Button.BackgroundTransparency = 0.3; Library.RegistryMap[Button].Properties.BackgroundColor3 = 'MainColor'; end
+                function Tab:Resize() local TabCount = 0; for _, t in next, Tabbox.Tabs do TabCount = TabCount + 1; end; for _, b in next, TabboxButtons:GetChildren() do if not b:IsA('UIListLayout') then b.Size = UDim2.new(1 / TabCount, 0, 1, 0); end; end; if (not Container.Visible) then return; end; local s = 0; for _, Element in next, Tab.Container:GetChildren() do if (not Element:IsA('UIListLayout')) and Element.Visible then s = s + Element.Size.Y.Offset; end; end; BoxOuter.Size = UDim2.new(1, 0, 0, (28 * DPIScale + s) + 4 + 2); end
                 Button.InputBegan:Connect(function(Input) if (Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame()) or Input.UserInputType == Enum.UserInputType.Touch then Tab:Show(); Tab:Resize(); end; end)
                 Tab.Container = Container; Tabbox.Tabs[Name] = Tab; setmetatable(Tab, BaseGroupbox); Tab:AddBlank(3); Tab:Resize(); if #TabboxButtons:GetChildren() == 2 then Tab:Show(); end; return Tab;
             end
